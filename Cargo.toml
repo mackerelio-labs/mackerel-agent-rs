@@ -10,3 +10,4 @@ edition = "2018"
 mackerel_client = "0.3.0"
 clap = {version = "2", features = ["yaml"]}
 rust-ini = "0.15"
+tokio = { version = "0.2", features = ["full"] }
