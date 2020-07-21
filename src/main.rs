@@ -1,6 +1,7 @@
 use clap::{load_yaml, App};
 use ini::Ini;
-use std::{collections::HashMap, fs::File, io::prelude::*, path::Path};
+use std::{collections::HashMap, fs::File, io::prelude::*, path::Path, time::Duration};
+use tokio::time;
 
 #[derive(Debug)]
 struct Config {
@@ -28,7 +29,8 @@ impl Config {
     }
 }
 
-fn main() -> std::io::Result<()> {
+#[tokio::main]
+async fn main() -> std::io::Result<()> {
     let yaml = load_yaml!("../cli.yml");
     let matches = App::from_yaml(yaml).get_matches();
     let path = Path::new(
@@ -38,5 +40,9 @@ fn main() -> std::io::Result<()> {
     );
     let ini = Ini::load_from_file(path).unwrap();
     dbg!(Config::from_ini(ini));
-    Ok(())
+    let mut interval = time::interval(Duration::from_secs(1));
+    loop {
+        println!("A");
+        dbg!(interval.tick().await);
+    }
 }
