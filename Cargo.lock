@@ -609,6 +609,7 @@ version = "0.1.0"
 dependencies = [
  "clap",
  "mackerel_client",
+ "os-stat-rs",
  "rust-ini",
  "tokio 0.2.21",
 ]
@@ -830,6 +831,14 @@ checksum = "e88f947c6799d5eff50e6cf8a2365c17ac4aa8f8f43aceeedc29b616d872a358"
 dependencies = [
  "dlv-list",
  "hashbrown",
+]
+
+[[package]]
+name = "os-stat-rs"
+version = "0.1.0"
+source = "git+https://github.com/Krout0n/os-stat-rs#2d8c70e8b3cf7dd07011b0f9cc93b28fd301cfe2"
+dependencies = [
+ "libc",
 ]
 
 [[package]]
