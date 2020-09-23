@@ -1,5 +1,6 @@
 use clap::{load_yaml, App};
 use ini::Ini;
+use os_stat_rs::cpu;
 use std::{collections::HashMap, fs::File, io::prelude::*, path::Path, time::Duration};
 use tokio::time;
 
@@ -36,13 +37,13 @@ async fn main() -> std::io::Result<()> {
     let path = Path::new(
         matches
             .value_of("config")
-            .unwrap_or("/usr/local/etc/mackerel-agent.conf"),
+            .unwrap_or("/src/mackerel-agent.conf"),
     );
     let ini = Ini::load_from_file(path).unwrap();
     dbg!(Config::from_ini(ini));
     let mut interval = time::interval(Duration::from_secs(1));
     loop {
-        println!("A");
         dbg!(interval.tick().await);
+        dbg!(cpu::get());
     }
 }
