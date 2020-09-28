@@ -472,6 +472,7 @@ version = "0.1.0"
 dependencies = [
  "clap",
  "mackerel_client",
+ "os-stat-rs",
  "rust-ini",
  "tokio",
 ]
@@ -685,8 +686,21 @@ dependencies = [
 ]
 
 [[package]]
+
 name = "percent-encoding"
 version = "2.1.0"
+
+name = "os-stat-rs"
+version = "0.1.0"
+source = "git+https://github.com/Krout0n/os-stat-rs#2d8c70e8b3cf7dd07011b0f9cc93b28fd301cfe2"
+dependencies = [
+ "libc",
+]
+
+[[package]]
+name = "parking_lot"
+version = "0.9.0"
+
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d4fd5641d01c8f18a23da7b6fe29298ff4b55afcccdf78973b24cf3175fee32e"
 
