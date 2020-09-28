@@ -7,7 +7,7 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-mackerel_client = "0.3.0"
+mackerel_client = { git = "https://github.com/Krout0n/mackerel-client-rs" }
 clap = {version = "2", features = ["yaml"]}
 rust-ini = "0.15"
 tokio = { version = "0.2", features = ["full"] }
