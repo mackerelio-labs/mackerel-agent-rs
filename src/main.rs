@@ -1,6 +1,6 @@
 use clap::{load_yaml, App};
 use ini::Ini;
-use mackerel_client::client::Client;
+use mackerel_client::{client::Client, metric};
 use os_stat_rs::cpu;
 use std::{collections::HashMap, fs::File, io::prelude::*, path::Path, time::Duration};
 use tokio::time;
@@ -8,6 +8,31 @@ use tokio::time;
 const HOST_PATH: &'static str = "/var/lib/mackerel-agent";
 // TODO: change path as /var/lib/mackerel-agent/id
 const HOST_ID_PATH: &'static str = "./id";
+
+#[derive(Debug)]
+struct Executor {
+    pub config: Config,
+    pub client: Client,
+    pub host_id: String,
+}
+
+impl Executor {
+    pub fn new(config: Config, host_id: String) -> Self {
+        Self {
+            client: Client::new(&config.api_key.clone()),
+            config,
+            host_id,
+        }
+    }
+
+    pub async fn run(&self) {
+        let mut interval = time::interval(Duration::from_secs(1));
+        loop {
+            interval.tick().await;
+            let _ = dbg!(cpu::get());
+        }
+    }
+}
 
 #[derive(Debug)]
 struct Config {
@@ -35,14 +60,6 @@ impl Config {
             .unwrap_or(&"https://api.mackerelio.com/")
             .to_string();
         conf
-    }
-}
-
-async fn run(_client: &Client, _host_id: &str) {
-    let mut interval = time::interval(Duration::from_secs(1));
-    loop {
-        interval.tick().await;
-        let _ = dbg!(cpu::get());
     }
 }
 
@@ -92,6 +109,7 @@ async fn main() -> std::io::Result<()> {
     if host_id.is_err() {
         todo!()
     }
-    run(&client, &host_id.unwrap()).await;
+    let executor = Executor::new(conf, host_id.unwrap());
+    executor.run().await;
     Ok(())
 }
