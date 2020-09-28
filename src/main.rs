@@ -64,9 +64,7 @@ async fn main() -> std::io::Result<()> {
             // TODO: Get hostname
             name -> "TEST".to_string()
         });
-        dbg!("AAA");
         let result = client.create_host(param).await;
-        dbg!(&result);
         if result.is_err() {
             unimplemented!();
         }
