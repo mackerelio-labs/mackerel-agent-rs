@@ -10,10 +10,61 @@ const HOST_PATH: &'static str = "/var/lib/mackerel-agent";
 const HOST_ID_PATH: &'static str = "./id";
 
 #[derive(Debug)]
+struct Values(HashMap<String, f64>);
+
+#[derive(Debug)]
 struct Executor {
     pub config: Config,
     pub client: Client,
     pub host_id: String,
+}
+
+impl From<(cpu::CPU, cpu::CPU)> for Values {
+    fn from((previous, current): (cpu::CPU, cpu::CPU)) -> Self {
+        let mut value = HashMap::new();
+        let total_diff = (current.total - previous.total) as f64;
+        let cpu_count = current.cpu_count as f64;
+
+        macro_rules! val_insert_inner {
+            ($key:expr, $val:expr) => {
+                value.insert(
+                    $key.into(),
+                    $val as f64 * cpu_count as f64 * 100.0 / total_diff,
+                );
+            };
+        }
+        val_insert_inner!(
+            "cpu.user.percentage",
+            (current.user - current.guest) - (previous.user - previous.guest)
+        );
+
+        macro_rules! val_insert {
+            ($field:ident) => {
+                let field = stringify!($field);
+                let key = format!("cpu.{}.percentage", field);
+                val_insert_inner!(key, current.$field - previous.$field)
+            };
+        }
+
+        val_insert!(nice);
+        val_insert!(system);
+        val_insert!(idle);
+
+        macro_rules! val_insert_if_bigger {
+            ($stat_count:expr, $field:ident) => {
+                if current.stat_count >= $stat_count {
+                    val_insert!($field);
+                }
+            };
+        }
+
+        val_insert_if_bigger!(5, iowait);
+        val_insert_if_bigger!(6, irq);
+        val_insert_if_bigger!(7, softirq);
+        val_insert_if_bigger!(8, steal);
+        val_insert_if_bigger!(9, guest);
+        Self(value)
+    }
 }
 
 impl Executor {
