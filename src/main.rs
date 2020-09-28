@@ -38,6 +38,44 @@ impl Config {
     }
 }
 
+async fn run(_client: &Client, _host_id: &str) {
+    let mut interval = time::interval(Duration::from_secs(1));
+    loop {
+        interval.tick().await;
+        let _ = dbg!(cpu::get());
+    }
+}
+
+// Register the running host or get host own id.
+async fn initialize(client: &Client) -> std::io::Result<String> {
+    // if !Path::exists(Path::new(HOST_PATH)) {
+    //     std::fs::create_dir(HOST_PATH)?;
+    // }
+    Ok(if let Ok(file) = File::open(HOST_ID_PATH) {
+        let mut file = file;
+        let mut buf = String::new();
+        if file.read_to_string(&mut buf).is_err() {
+            unimplemented!()
+        }
+        buf
+    } else {
+        let hostname = hostname::get();
+        if hostname.is_err() {
+            todo!();
+        }
+        let hostname = hostname.unwrap().to_str().unwrap().to_owned();
+        let param = mackerel_client::create_host_param!({name -> hostname});
+        let result = client.create_host(param).await;
+        if result.is_err() {
+            unimplemented!();
+        }
+        let registerd_host_id = result.unwrap();
+        let mut file = File::create(HOST_ID_PATH)?;
+        file.write(registerd_host_id.as_bytes())?;
+        registerd_host_id
+    })
+}
+
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
     let yaml = load_yaml!("../cli.yml");
@@ -50,34 +88,10 @@ async fn main() -> std::io::Result<()> {
     let ini = Ini::load_from_file(path).unwrap();
     let conf = dbg!(Config::from_ini(ini));
     let client = Client::new(&conf.api_key);
-    // if !Path::exists(Path::new(HOST_PATH)) {
-    //     std::fs::create_dir(HOST_PATH)?;
-    // }
-    let _host_id = if let Ok(file) = File::open(HOST_ID_PATH) {
-        let mut file = file;
-        let mut buf = String::new();
-        if file.read_to_string(&mut buf).is_err() {
-            unimplemented!()
-        }
-        buf
-    } else {
-        let param = mackerel_client::create_host_param!({
-            // TODO: Get hostname
-            name -> "TEST".to_string()
-        });
-        let result = client.create_host(param).await;
-        if result.is_err() {
-            unimplemented!();
-        }
-        let registerd_host_id = result.unwrap();
-        let mut file = File::create(HOST_ID_PATH)?;
-        file.write(registerd_host_id.as_bytes())?;
-        registerd_host_id
-    };
-
-    let mut interval = time::interval(Duration::from_secs(1));
-    loop {
-        dbg!(interval.tick().await);
-        dbg!(cpu::get());
+    let host_id = initialize(&client).await;
+    if host_id.is_err() {
+        todo!()
     }
+    run(&client, &host_id.unwrap()).await;
+    Ok(())
 }
