@@ -6,6 +6,7 @@ use std::{collections::HashMap, fs::File, io::prelude::*, path::Path, time::Dura
 use tokio::time;
 
 const HOST_PATH: &'static str = "/var/lib/mackerel-agent";
+// TODO: change path as /var/lib/mackerel-agent/id
 const HOST_ID_PATH: &'static str = "./id";
 
 #[derive(Debug)]
