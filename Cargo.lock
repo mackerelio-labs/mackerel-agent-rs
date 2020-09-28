@@ -484,7 +484,7 @@ dependencies = [
 [[package]]
 name = "mackerel_client"
 version = "0.4.0"
-source = "git+https://github.com/Krout0n/mackerel-client-rs#189ebeb5accf19b1a9fdb1e2e150d4fab9513933"
+source = "git+https://github.com/Krout0n/mackerel-client-rs#f2f87cb4cf3c1d30c75725e2db37e618b7f1a902"
 dependencies = [
  "error-chain",
  "reqwest",
