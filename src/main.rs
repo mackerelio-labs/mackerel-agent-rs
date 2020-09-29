@@ -67,6 +67,33 @@ impl From<(cpu::CPU, cpu::CPU)> for Values {
     }
 }
 
+struct HostMetricWrapper<'a>(&'a str, Values);
+
+impl<'a> Into<Vec<metric::HostMetricValue>> for HostMetricWrapper<'a> {
+    fn into(self) -> Vec<metric::HostMetricValue> {
+        use std::time::SystemTime;
+        let host_id = self.0;
+        let value = self.1;
+        let host_metric_value = value.0;
+        let now = match SystemTime::now().duration_since(SystemTime::UNIX_EPOCH) {
+            Ok(n) => n.as_secs(),
+            Err(_) => panic!("SystemTime before UNIX EPOCH!"),
+        };
+        host_metric_value
+            .into_iter()
+            .map(|hmv| {
+                let (name, value) = hmv;
+                metric::HostMetricValue {
+                    host_id: host_id.to_owned(),
+                    name,
+                    value,
+                    time: now,
+                }
+            })
+            .collect()
+    }
+}
+
 impl Executor {
     pub fn new(config: Config, host_id: String) -> Self {
         Self {
@@ -77,10 +104,27 @@ impl Executor {
     }
 
     pub async fn run(&self) {
-        let mut interval = time::interval(Duration::from_secs(1));
+        let mut interval = time::interval(Duration::from_secs(5));
         loop {
             interval.tick().await;
-            let _ = dbg!(cpu::get());
+            let cpu_metric = self.get_cpu_metrics().await.unwrap();
+            self.send_metric(cpu_metric).await;
+        }
+    }
+
+    async fn send_metric(&self, val: Values) {
+        let metric = HostMetricWrapper(&self.host_id, val).into();
+        self.client.post_metrics(metric).await;
+    }
+
+    async fn get_cpu_metrics(&self) -> Option<Values> {
+        let interval = Duration::from_secs(5);
+        let previous = cpu::get();
+        std::thread::sleep(interval);
+        let current = cpu::get();
+        match (previous, current) {
+            (Ok(previous), Ok(current)) => Some((previous, current).into()),
+            _ => None,
         }
     }
 }
