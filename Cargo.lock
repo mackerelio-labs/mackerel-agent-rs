@@ -478,6 +478,7 @@ dependencies = [
  "mackerel_client",
  "os-stat-rs",
  "rust-ini",
+ "serde_json",
  "tokio",
 ]
 

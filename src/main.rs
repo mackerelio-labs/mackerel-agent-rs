@@ -28,7 +28,11 @@ async fn initialize(client: &Client) -> std::io::Result<String> {
             todo!();
         }
         let hostname = hostname.unwrap().to_str().unwrap().to_owned();
-        let param = mackerel_client::create_host_param!({name -> format!("{}.rs", hostname)});
+        let meta = mackerel_agent_rs::host_meta::collect_as_json();
+        let param = mackerel_client::create_host_param!({
+            name -> format!("{}.rs", hostname)
+            meta -> meta
+        });
         let result = client.create_host(param).await;
         if result.is_err() {
             unimplemented!();

@@ -7,9 +7,10 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-mackerel_client = { git = "https://github.com/Krout0n/mackerel-client-rs" }
 clap = {version = "2", features = ["yaml"]}
-rust-ini = "0.15"
-tokio = { version = "0.2", features = ["full"] }
-os-stat-rs = { git = "https://github.com/Krout0n/os-stat-rs" }
 hostname = "^0.3"
+mackerel_client = { git = "https://github.com/Krout0n/mackerel-client-rs" }
+os-stat-rs = { git = "https://github.com/Krout0n/os-stat-rs" }
+rust-ini = "0.15"
+serde_json = "1.0.56"
+tokio = { version = "0.2", features = ["full"] }
