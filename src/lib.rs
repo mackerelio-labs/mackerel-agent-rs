@@ -74,13 +74,13 @@ impl std::ops::DerefMut for Values {
 }
 
 #[derive(Debug)]
-pub struct Executor {
+pub struct Agent {
     pub config: Config,
     pub client: Client,
     pub host_id: String,
 }
 
-impl Executor {
+impl Agent {
     pub fn new(config: Config, host_id: String) -> Self {
         Self {
             client: Client::new(&config.api_key.clone()),

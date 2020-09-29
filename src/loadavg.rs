@@ -1,8 +1,8 @@
-use crate::{Executor, Values};
+use crate::{Agent, Values};
 use os_stat_rs::loadavg;
 use std::collections::HashMap;
 
-impl Executor {
+impl Agent {
     pub fn get_loadavg_metric(&self) -> Values {
         let loadavg_stats = loadavg::get();
         let mut values = HashMap::new();

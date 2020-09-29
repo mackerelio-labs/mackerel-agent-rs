@@ -1,4 +1,4 @@
-use crate::{Executor, Values};
+use crate::{Agent, Values};
 use os_stat_rs::cpu;
 use std::{collections::HashMap, time::Duration};
 
@@ -51,7 +51,7 @@ impl From<(cpu::CPU, cpu::CPU)> for Values {
     }
 }
 
-impl Executor {
+impl Agent {
     pub async fn get_cpu_metrics(&self) -> Option<Values> {
         let interval = Duration::from_secs(10);
         let previous = cpu::get();
