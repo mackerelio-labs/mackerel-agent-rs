@@ -94,8 +94,9 @@ impl Executor {
         loop {
             interval.tick().await;
             let cpu_metric = self.get_cpu_metrics().await.unwrap();
+            let loadavg_metric = self.get_loadavg_metric();
             let mut metrics = Values(HashMap::new());
-            for v in vec![cpu_metric] {
+            for v in vec![cpu_metric, loadavg_metric] {
                 metrics.extend(v.0);
             }
             self.send_metric(metrics).await;
@@ -109,3 +110,4 @@ impl Executor {
 }
 
 pub mod cpu;
+pub mod loadavg;
