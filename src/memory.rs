@@ -11,12 +11,12 @@ impl Agent {
         values.insert("memory.swap_total".into(), mem.swap_total as f64);
         values.insert("memory.swap_cached".into(), mem.swap_cached as f64);
         values.insert("memory.swap_free".into(), mem.swap_free as f64);
-        if mem.mem_available {
-            values.insert("memory.mem_available", mem.available);
+        if mem.mem_available_enabled {
+            values.insert("memory.mem_available".into(), mem.available as f64);
         } else {
-            values.insert("memory.buffers", mem.buffers);
-            values.insert("memory.cached", mem.cached);
-            values.insert("memory.free", mem.free);
+            values.insert("memory.buffers".into(), mem.buffers as f64);
+            values.insert("memory.cached".into(), mem.cached as f64);
+            values.insert("memory.free".into(), mem.free as f64);
         }
         Some(Values(values))
     }
