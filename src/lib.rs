@@ -108,7 +108,10 @@ impl Agent {
     async fn send_metric(&self, val: Values) {
         let metric = HostMetricWrapper(&self.host_id, val).into();
         // TODO: error handling.
-        let _ = self.client.post_metrics(metric).await;
+        let result = self.client.post_metrics(metric).await;
+        if result.is_err() {
+            dbg!(result.err());
+        }
     }
 }
 
