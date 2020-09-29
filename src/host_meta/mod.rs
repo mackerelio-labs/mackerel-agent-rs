@@ -1,6 +1,10 @@
 use serde_json::{map::Map, Value};
 // use std::collections::HashMap;
 
+// TODO:
+//   - mackerel_client_rs に持って行けるか考へる
+//   - Cloud の定義
+//   - JSON への変換のところまともにして
 pub struct HostMeta {
     pub agent_name: String,
     pub agent_revision: String,
