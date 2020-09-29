@@ -85,10 +85,11 @@ pub struct HostMeta {
 // }
 
 pub fn collect() -> HostMeta {
+    let ver = version::Version::new();
     HostMeta {
         agent_name: "mackerel-agent-rs/0.0.1 (Revision f2f87cb)".to_owned(),
         agent_revision: "f2f87cb".to_owned(),
-        agent_version: "0.0.1".to_owned(),
+        agent_version: ver.version,
     }
 }
 
@@ -106,3 +107,5 @@ pub fn collect_as_json() -> Map<String, Value> {
     );
     meta_json
 }
+
+mod version;
