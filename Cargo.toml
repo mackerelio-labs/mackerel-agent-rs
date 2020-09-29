@@ -8,6 +8,7 @@ edition = "2018"
 
 [dependencies]
 clap = {version = "2", features = ["yaml"]}
+compile-time-run = "0.2.11"
 hostname = "^0.3"
 lazy_static = "1.4.0"
 mackerel_client = { git = "https://github.com/Krout0n/mackerel-client-rs" }
