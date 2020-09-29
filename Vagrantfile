@@ -6,6 +6,7 @@ Vagrant.configure(2) do |config|
   config.vm.box_version = "10.3.0"
   # `vagrant plugin install vagrant-vbguest` を事前にしておくこと
   config.vm.synced_folder ".", "/src/"
+  config.vm.hostname = "mackerelrs-test-#{ENV['USER']}"
 
   config.vm.provision "shell", privileged: false, inline: <<-SHELL
     sudo apt-get update
