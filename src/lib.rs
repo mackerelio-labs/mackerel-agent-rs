@@ -2,35 +2,6 @@ use mackerel_client::{client::Client, metric};
 use std::{collections::HashMap, time::Duration};
 use tokio::time;
 
-#[derive(Default, Debug)]
-pub struct Config {
-    pub api_key: String,
-    pub apibase: String,
-}
-
-impl Config {
-    pub fn new() -> Self {
-        Self {
-            api_key: String::new(),
-            apibase: String::new(),
-        }
-    }
-
-    pub fn from_ini(ini: ini::Ini) -> Self {
-        let mut conf = Self::new();
-        let map = &ini
-            .iter()
-            .map(|(_, val)| val.iter().collect::<HashMap<_, _>>())
-            .collect::<Vec<_>>()[0];
-        conf.api_key = map.get("apikey").unwrap().to_string();
-        conf.apibase = map
-            .get("apibase")
-            .unwrap_or(&"https://api.mackerelio.com/")
-            .to_string();
-        conf
-    }
-}
-
 #[derive(Debug)]
 pub struct Values(HashMap<String, f64>);
 // &'a str expects host id.
@@ -75,15 +46,15 @@ impl std::ops::DerefMut for Values {
 
 #[derive(Debug)]
 pub struct Agent {
-    pub config: Config,
+    pub config: config::Config,
     pub client: Client,
     pub host_id: String,
 }
 
 impl Agent {
-    pub fn new(config: Config, host_id: String) -> Self {
+    pub fn new(config: config::Config, host_id: String) -> Self {
         Self {
-            client: Client::new(&config.api_key),
+            client: Client::new(&config.apikey),
             config,
             host_id,
         }
@@ -115,9 +86,11 @@ impl Agent {
     }
 }
 
-pub mod cpu;
+pub mod config;
 pub mod host_meta;
-pub mod interface;
-pub mod loadavg;
+
+mod cpu;
+mod interface;
+mod loadavg;
 mod memory;
-pub mod util;
+mod util;

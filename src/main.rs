@@ -1,8 +1,7 @@
 extern crate mackerel_agent_rs;
 
 use clap::{load_yaml, App};
-use ini::Ini;
-use mackerel_agent_rs::{Agent, Config};
+use mackerel_agent_rs::{config::Config, Agent};
 use mackerel_client::client::Client;
 use std::{fs::File, io::prelude::*, path::Path};
 
@@ -11,7 +10,7 @@ use std::{fs::File, io::prelude::*, path::Path};
 const HOST_ID_PATH: &str = "./id";
 
 // Register the running host or get host own id.
-async fn initialize(client: &Client) -> std::io::Result<String> {
+async fn initialize(client: &Client, conf: &Config) -> std::io::Result<String> {
     // if !Path::exists(Path::new(HOST_PATH)) {
     //     std::fs::create_dir(HOST_PATH)?;
     // }
@@ -30,8 +29,9 @@ async fn initialize(client: &Client) -> std::io::Result<String> {
         let hostname = hostname.unwrap().to_str().unwrap().to_owned();
         let meta = mackerel_agent_rs::host_meta::collect_as_json();
         let param = mackerel_client::create_host_param!({
-            name -> format!("{}.rs", hostname)
+            name -> format!("{}.rs", hostname) // TODO .rs を付けてるのはは暫定的
             meta -> meta
+            role_fullnames -> conf.roles.clone()
         });
         let result = client.create_host(param).await;
         if result.is_err() {
@@ -53,10 +53,9 @@ async fn main() -> std::io::Result<()> {
             .value_of("config")
             .unwrap_or("/src/mackerel-agent.conf"),
     );
-    let ini = Ini::load_from_file(path).unwrap();
-    let conf = dbg!(Config::from_ini(ini));
-    let client = Client::new(&conf.api_key);
-    let host_id = initialize(&client).await;
+    let conf = dbg!(Config::from_file(path));
+    let client = Client::new(&conf.apikey);
+    let host_id = initialize(&client, &conf).await;
     if host_id.is_err() {
         todo!()
     }

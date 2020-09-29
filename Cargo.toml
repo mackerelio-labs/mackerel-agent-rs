@@ -13,6 +13,7 @@ lazy_static = "1.4.0"
 mackerel_client = { git = "https://github.com/Krout0n/mackerel-client-rs" }
 os-stat-rs = { git = "https://github.com/Krout0n/os-stat-rs" }
 regex = "1"
-rust-ini = "0.15"
+serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0.56"
 tokio = { version = "0.2", features = ["full"] }
+toml = "0.5"
