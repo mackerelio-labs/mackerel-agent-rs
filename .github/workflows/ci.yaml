@@ -13,6 +13,7 @@ jobs:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
+            ~/.rustup
             target
           key: ${{ runner.os }}-cargo
       - uses: actions-rs/toolchain@v1
