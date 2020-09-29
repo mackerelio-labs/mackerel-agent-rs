@@ -97,7 +97,7 @@ impl Agent {
             let loadavg_metric = self.get_loadavg_metric();
             let memory_metric = self.get_memory_metrics();
             let mut metrics = Values(HashMap::new());
-            for v in vec![cpu_metric, loadavg_metric] {
+            for v in vec![cpu_metric, loadavg_metric, memory_metric] {
                 metrics.extend(v.0);
             }
             self.send_metric(metrics).await;

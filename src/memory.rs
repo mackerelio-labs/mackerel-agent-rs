@@ -3,7 +3,7 @@ use os_stat_rs::memory;
 use std::{collections::HashMap, time::Duration};
 
 impl Agent {
-    pub async fn get_memory_metrics(&self) -> Option<Values> {
+    pub fn get_memory_metrics(&self) -> Values {
         let mem = memory::get().expect("failed to get memory statistics");
         let mut values = HashMap::new();
         values.insert("memory.total".into(), mem.total as f64);
@@ -18,6 +18,6 @@ impl Agent {
             values.insert("memory.cached".into(), mem.cached as f64);
             values.insert("memory.free".into(), mem.free as f64);
         }
-        Some(Values(values))
+        Values(values)
     }
 }
