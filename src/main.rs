@@ -20,6 +20,7 @@ struct Executor {
 }
 
 impl From<(cpu::CPU, cpu::CPU)> for Values {
+    // https://github.com/mackerelio/mackerel-agent/blob/d9e3082a32b96c17560a375e5e78babcb0f34e8d/metrics/linux/cpuusage.go#L31-L75
     fn from((previous, current): (cpu::CPU, cpu::CPU)) -> Self {
         let mut value = HashMap::new();
         let total_diff = (current.total - previous.total) as f64;
@@ -118,7 +119,7 @@ impl Executor {
     }
 
     async fn get_cpu_metrics(&self) -> Option<Values> {
-        let interval = Duration::from_secs(5);
+        let interval = Duration::from_secs(10);
         let previous = cpu::get();
         std::thread::sleep(interval);
         let current = cpu::get();
@@ -176,7 +177,7 @@ async fn initialize(client: &Client) -> std::io::Result<String> {
             todo!();
         }
         let hostname = hostname.unwrap().to_str().unwrap().to_owned();
-        let param = mackerel_client::create_host_param!({name -> hostname});
+        let param = mackerel_client::create_host_param!({name -> format!("{}.rs", hostname)});
         let result = client.create_host(param).await;
         if result.is_err() {
             unimplemented!();
