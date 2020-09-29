@@ -28,23 +28,10 @@ async fn initialize(client: &Client) -> std::io::Result<String> {
             todo!();
         }
         let hostname = hostname.unwrap().to_str().unwrap().to_owned();
-        let meta = mackerel_agent_rs::host_meta::collect();
-        let mut meta_json = serde_json::map::Map::new();
-        meta_json.insert(
-            "agent_name".to_owned(),
-            serde_json::Value::String(meta.agent_name),
-        );
-        meta_json.insert(
-            "agent_revision".to_owned(),
-            serde_json::Value::String(meta.agent_revision),
-        );
-        meta_json.insert(
-            "agent_version".to_owned(),
-            serde_json::Value::String(meta.agent_version),
-        );
+        let meta = mackerel_agent_rs::host_meta::collect_as_json();
         let param = mackerel_client::create_host_param!({
             name -> format!("{}.rs", hostname)
-            meta -> meta_json
+            meta -> meta
         });
         let result = client.create_host(param).await;
         if result.is_err() {

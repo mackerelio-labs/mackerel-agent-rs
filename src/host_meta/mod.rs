@@ -1,3 +1,4 @@
+use serde_json::{map::Map, Value};
 // use std::collections::HashMap;
 
 pub struct HostMeta {
@@ -85,4 +86,19 @@ pub fn collect() -> HostMeta {
         agent_revision: "f2f87cb".to_owned(),
         agent_version: "0.0.1".to_owned(),
     }
+}
+
+pub fn collect_as_json() -> Map<String, Value> {
+    let meta = collect();
+    let mut meta_json = Map::new();
+    meta_json.insert("agent_name".to_owned(), Value::String(meta.agent_name));
+    meta_json.insert(
+        "agent_revision".to_owned(),
+        Value::String(meta.agent_revision),
+    );
+    meta_json.insert(
+        "agent_version".to_owned(),
+        Value::String(meta.agent_version),
+    );
+    meta_json
 }
