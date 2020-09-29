@@ -705,7 +705,7 @@ dependencies = [
 [[package]]
 name = "os-stat-rs"
 version = "0.1.0"
-source = "git+https://github.com/Krout0n/os-stat-rs#76bcc2ea0ce88a439467e5c9e7d3a207d27b27ac"
+source = "git+https://github.com/Krout0n/os-stat-rs#8cbf5f27001e6c3988754d2b680ee3484a62181c"
 dependencies = [
  "libc",
 ]
