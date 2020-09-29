@@ -74,13 +74,13 @@ impl std::ops::DerefMut for Values {
 }
 
 #[derive(Debug)]
-pub struct Executor {
+pub struct Agent {
     pub config: Config,
     pub client: Client,
     pub host_id: String,
 }
 
-impl Executor {
+impl Agent {
     pub fn new(config: Config, host_id: String) -> Self {
         Self {
             client: Client::new(&config.api_key.clone()),
@@ -93,7 +93,7 @@ impl Executor {
         let mut interval = time::interval(Duration::from_secs(5));
         loop {
             interval.tick().await;
-            let cpu_metric = self.get_cpu_metrics().await.unwrap();
+            let cpu_metric = self.get_cpu_metrics().unwrap();
             let loadavg_metric = self.get_loadavg_metric();
             let mut metrics = Values(HashMap::new());
             for v in vec![cpu_metric, loadavg_metric] {

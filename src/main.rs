@@ -2,7 +2,7 @@ extern crate mackerel_agent_rs;
 
 use clap::{load_yaml, App};
 use ini::Ini;
-use mackerel_agent_rs::{Config, Executor};
+use mackerel_agent_rs::{Agent, Config};
 use mackerel_client::client::Client;
 use std::{fs::File, io::prelude::*, path::Path};
 
@@ -56,7 +56,7 @@ async fn main() -> std::io::Result<()> {
     if host_id.is_err() {
         todo!()
     }
-    let executor = Executor::new(conf, host_id.unwrap());
-    executor.run().await;
+    let agent = Agent::new(conf, host_id.unwrap());
+    agent.run().await;
     Ok(())
 }
