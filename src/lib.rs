@@ -93,7 +93,7 @@ impl Agent {
         let mut interval = time::interval(Duration::from_secs(5));
         loop {
             interval.tick().await;
-            let cpu_metric = self.get_cpu_metrics().await.unwrap();
+            let cpu_metric = self.get_cpu_metrics().unwrap();
             let loadavg_metric = self.get_loadavg_metric();
             let mut metrics = Values(HashMap::new());
             for v in vec![cpu_metric, loadavg_metric] {

@@ -52,7 +52,7 @@ impl From<(cpu::CPU, cpu::CPU)> for Values {
 }
 
 impl Agent {
-    pub async fn get_cpu_metrics(&self) -> Option<Values> {
+    pub fn get_cpu_metrics(&self) -> Option<Values> {
         let interval = Duration::from_secs(10);
         let previous = cpu::get();
         std::thread::sleep(interval);
