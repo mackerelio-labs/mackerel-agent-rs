@@ -26,6 +26,6 @@ Vagrant.configure(2) do |config|
     rustup component add rust-src
     cargo install cargo-watch
 
-    echo "export PATH="$HOME/.cargo/bin:$PATH"; cd /src" >> $HOME/.bashrc
+    echo "export PATH="$HOME/.cargo/bin:$PATH"; cd /src;  alias ll='ls -lG'" >> $HOME/.bashrc
   SHELL
 end
