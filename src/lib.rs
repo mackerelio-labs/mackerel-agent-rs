@@ -95,6 +95,7 @@ impl Agent {
             interval.tick().await;
             let cpu_metric = self.get_cpu_metrics().unwrap();
             let loadavg_metric = self.get_loadavg_metric();
+            let memory_metric = self.get_memory_metrics();
             let mut metrics = Values(HashMap::new());
             for v in vec![cpu_metric, loadavg_metric] {
                 metrics.extend(v.0);
@@ -112,3 +113,4 @@ impl Agent {
 pub mod cpu;
 pub mod host_meta;
 pub mod loadavg;
+mod memory;
