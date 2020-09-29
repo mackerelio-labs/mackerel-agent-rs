@@ -1,0 +1,27 @@
+on:
+  push:
+    paths:
+      - "**"
+jobs:
+  test:
+    name: CI
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          components: rustfmt, clippy
+      - uses: actions-rs/cargo@v1
+        with:
+          command: fmt
+          args: --all -- --check
+      - uses: actions-rs/cargo@v1
+        with:
+          command: clippy
+          # TODO
+          # args: -- -D warnings
+      - uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --no-fail-fast -- --nocapture
