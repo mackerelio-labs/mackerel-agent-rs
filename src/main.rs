@@ -39,7 +39,7 @@ async fn initialize(client: &Client) -> std::io::Result<String> {
         }
         let registerd_host_id = result.unwrap();
         let mut file = File::create(HOST_ID_PATH)?;
-        file.write(registerd_host_id.as_bytes())?;
+        file.write_all(registerd_host_id.as_bytes())?;
         registerd_host_id
     })
 }
