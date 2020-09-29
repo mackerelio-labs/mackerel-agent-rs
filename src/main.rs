@@ -6,9 +6,9 @@ use mackerel_agent_rs::{Agent, Config};
 use mackerel_client::client::Client;
 use std::{fs::File, io::prelude::*, path::Path};
 
-const HOST_PATH: &'static str = "/var/lib/mackerel-agent";
+// const HOST_PATH: &str = "/var/lib/mackerel-agent";
 // TODO: change path as /var/lib/mackerel-agent/id
-const HOST_ID_PATH: &'static str = "./id";
+const HOST_ID_PATH: &str = "./id";
 
 // Register the running host or get host own id.
 async fn initialize(client: &Client) -> std::io::Result<String> {

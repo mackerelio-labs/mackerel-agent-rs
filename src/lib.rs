@@ -2,7 +2,7 @@ use mackerel_client::{client::Client, metric};
 use std::{collections::HashMap, time::Duration};
 use tokio::time;
 
-#[derive(Debug)]
+#[derive(Default, Debug)]
 pub struct Config {
     pub api_key: String,
     pub apibase: String,
@@ -83,7 +83,7 @@ pub struct Agent {
 impl Agent {
     pub fn new(config: Config, host_id: String) -> Self {
         Self {
-            client: Client::new(&config.api_key.clone()),
+            client: Client::new(&config.api_key),
             config,
             host_id,
         }
@@ -107,7 +107,8 @@ impl Agent {
 
     async fn send_metric(&self, val: Values) {
         let metric = HostMetricWrapper(&self.host_id, val).into();
-        self.client.post_metrics(metric).await;
+        // TODO: error handling.
+        let _ = self.client.post_metrics(metric).await;
     }
 }
 
