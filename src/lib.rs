@@ -61,6 +61,18 @@ impl<'a> Into<Vec<metric::HostMetricValue>> for HostMetricWrapper<'a> {
     }
 }
 
+impl std::ops::Deref for Values {
+    type Target = HashMap<String, f64>;
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+impl std::ops::DerefMut for Values {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
 #[derive(Debug)]
 pub struct Executor {
     pub config: Config,
@@ -82,7 +94,11 @@ impl Executor {
         loop {
             interval.tick().await;
             let cpu_metric = self.get_cpu_metrics().await.unwrap();
-            self.send_metric(cpu_metric).await;
+            let mut metrics = Values(HashMap::new());
+            for v in vec![cpu_metric] {
+                metrics.extend(v.0);
+            }
+            self.send_metric(metrics).await;
         }
     }
 
