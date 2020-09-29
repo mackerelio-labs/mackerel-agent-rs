@@ -110,4 +110,5 @@ impl Agent {
 }
 
 pub mod cpu;
+pub mod host_meta;
 pub mod loadavg;
