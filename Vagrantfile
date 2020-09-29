@@ -11,7 +11,7 @@ Vagrant.configure(2) do |config|
     sudo apt-get update
     sudo apt-get autoremove -y
     sudo apt install -y curl
-    sudo apt install -y libssl-dev pkg-config
+    sudo apt install -y libssl-dev pkg-config build-essential
 
     cd /src
     if hash rustup; then
