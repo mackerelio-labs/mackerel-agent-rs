@@ -39,7 +39,7 @@ fn network_to_hashmap(nw_stats: Vec<network::Network>) -> HashMap<String, f64> {
 }
 
 impl Agent {
-    pub fn get_interfaces_metrics(&self) -> Option<Values> {
+    pub fn get_interfaces_metrics() -> Option<Values> {
         let interval = std::time::Duration::from_secs(INTERNAL_SECONDS);
         let previous = network::get();
         std::thread::sleep(interval);

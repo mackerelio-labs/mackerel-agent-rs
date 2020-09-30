@@ -3,7 +3,7 @@ use os_stat_rs::loadavg;
 use std::collections::HashMap;
 
 impl Agent {
-    pub fn get_loadavg_metric(&self) -> Values {
+    pub fn get_loadavg_metric() -> Values {
         let loadavg_stats = loadavg::get();
         let mut values = HashMap::new();
         values.insert("loadavg1".into(), loadavg_stats.loadavg1);

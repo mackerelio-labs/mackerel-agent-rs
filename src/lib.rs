@@ -1,5 +1,10 @@
 use mackerel_client::{client::Client, metric};
-use std::{collections::HashMap, time::Duration};
+use std::{
+    collections::HashMap,
+    sync::mpsc::{self, channel},
+    thread,
+    time::Duration,
+};
 use tokio::time;
 
 #[derive(Debug)]
@@ -63,13 +68,16 @@ impl Agent {
     pub async fn run(&self) {
         let mut interval = time::interval(Duration::from_secs(5));
         loop {
+            let (tx, rx) = channel();
             interval.tick().await;
-            let cpu_metric = self.get_cpu_metrics().unwrap();
-            let filesystem_metric = self.get_filesystem_metrics();
-            let interfaces_metric = self.get_interfaces_metrics().unwrap();
-            let loadavg_metric = self.get_loadavg_metric();
-            let memory_metric = self.get_memory_metrics();
-            let disk_metric = self.get_disk_metrics().unwrap();
+            type F = Box<dyn Fn() -> Values + Send>;
+            let cpu_metric: F = Box::new(|| Self::get_cpu_metrics().unwrap());
+            let disk_metric: F = Box::new(|| Self::get_disk_metrics().unwrap());
+            let filesystem_metric: F = Box::new(Self::get_filesystem_metrics);
+            let interfaces_metric: F = Box::new(|| Self::get_interfaces_metrics().unwrap());
+            let loadavg_metric: F = Box::new(Self::get_loadavg_metric);
+            let memory_metric: F = Box::new(Self::get_memory_metrics);
+
             let mut metrics = Values(HashMap::new());
             for v in vec![
                 cpu_metric,
@@ -79,8 +87,20 @@ impl Agent {
                 loadavg_metric,
                 memory_metric,
             ] {
-                metrics.extend(v.0);
+                let tx = mpsc::Sender::clone(&tx);
+                thread::spawn(move || {
+                    let val = v();
+                    tx.send(val).unwrap();
+                });
             }
+
+            // drop tx explicitly because of breaking for ... in rx
+            drop(tx);
+
+            for recieved_metrics in rx {
+                metrics.extend(recieved_metrics.0);
+            }
+
             self.send_metric(metrics).await;
         }
     }

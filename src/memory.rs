@@ -3,7 +3,7 @@ use os_stat_rs::memory;
 use std::collections::HashMap;
 
 impl Agent {
-    pub fn get_memory_metrics(&self) -> Values {
+    pub fn get_memory_metrics() -> Values {
         let mem = memory::get().expect("failed to get memory statistics");
         let mut values = HashMap::new();
         values.insert("memory.total".into(), mem.total as f64);

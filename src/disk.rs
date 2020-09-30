@@ -3,7 +3,7 @@ use os_stat_rs::disk;
 use std::{collections::HashMap, time::Duration};
 
 impl Agent {
-    pub fn get_disk_metrics(&self) -> Option<Values> {
+    pub fn get_disk_metrics() -> Option<Values> {
         let interval = Duration::from_secs(10);
         let previous = disk::get().expect("failed to get disk statistics");
         std::thread::sleep(interval);

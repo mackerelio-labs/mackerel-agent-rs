@@ -3,7 +3,7 @@ use os_stat_rs::filesystem;
 use std::collections::HashMap;
 
 impl Agent {
-    pub fn get_filesystem_metrics(&self) -> Values {
+    pub fn get_filesystem_metrics() -> Values {
         let stats = filesystem::get().expect("failed to get filesystem metrics");
         let mut values = HashMap::new();
         for stats_item in stats {
