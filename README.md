@@ -2,7 +2,7 @@
 
 ! This is just an experimental version. !
 
-Another mackerel-agent implemented by Rust.
+Another [mackerel-agent](https://github.com/mackerelio/mackerel-agent) implemented in Rust.
 
 ## development
 
