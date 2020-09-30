@@ -66,10 +66,10 @@ impl Agent {
     }
 
     pub async fn run(&self) {
-        let mut interval = time::interval(Duration::from_secs(5));
+        let mut interval = time::interval(Duration::from_secs(60));
         loop {
-            let (tx, rx) = channel();
             interval.tick().await;
+            let (tx, rx) = channel();
             type F = Box<dyn Fn() -> Values + Send>;
             let cpu_metric: F = Box::new(|| Self::get_cpu_metrics().unwrap());
             let disk_metric: F = Box::new(|| Self::get_disk_metrics().unwrap());
