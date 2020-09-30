@@ -4,6 +4,11 @@
 Vagrant.configure(2) do |config|
   config.vm.box = "debian/buster64"
   config.vm.box_version = "10.3.0"
+  config.vm.provider "virtualbox" do |vm|
+    vm.memory = 4096
+    vm.cpus = 4
+  end
+
   # `vagrant plugin install vagrant-vbguest` を事前にしておくこと
   config.vm.synced_folder ".", "/src/"
   config.vm.hostname = "mackerelrs-test-#{ENV['USER']}"
