@@ -1,10 +1,10 @@
 use crate::{Agent, Values};
-use os_stat_rs::cpu;
+use os_stat::CPU;
 use std::{collections::HashMap, time::Duration};
 
-impl From<(cpu::CPU, cpu::CPU)> for Values {
+impl From<(CPU, CPU)> for Values {
     // https://github.com/mackerelio/mackerel-agent/blob/d9e3082a32b96c17560a375e5e78babcb0f34e8d/metrics/linux/cpuusage.go#L31-L75
-    fn from((previous, current): (cpu::CPU, cpu::CPU)) -> Self {
+    fn from((previous, current): (CPU, CPU)) -> Self {
         let mut value = HashMap::new();
         let total_diff = (current.total - previous.total) as f64;
         let cpu_count = current.cpu_count as f64;
@@ -54,9 +54,9 @@ impl From<(cpu::CPU, cpu::CPU)> for Values {
 impl Agent {
     pub fn get_cpu_metrics() -> Option<Values> {
         let interval = Duration::from_secs(10);
-        let previous = cpu::get();
+        let previous = CPU::get();
         std::thread::sleep(interval);
-        let current = cpu::get();
+        let current = CPU::get();
         match (previous, current) {
             (Ok(previous), Ok(current)) => Some((previous, current).into()),
             _ => None,

@@ -1,10 +1,10 @@
 use crate::{Agent, Values};
-use os_stat_rs::memory;
+use os_stat::Memory;
 use std::collections::HashMap;
 
 impl Agent {
     pub fn get_memory_metrics() -> Values {
-        let mem = memory::get().expect("failed to get memory statistics");
+        let mem = Memory::get().expect("failed to get memory statistics");
         let mut values = HashMap::new();
         values.insert("memory.total".into(), mem.total as f64);
         values.insert("memory.used".into(), mem.used as f64);
