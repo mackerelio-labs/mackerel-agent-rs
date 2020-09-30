@@ -1,6 +1,6 @@
 use crate::{Agent, Values};
 use os_stat_rs::memory;
-use std::{collections::HashMap, time::Duration};
+use std::collections::HashMap;
 
 impl Agent {
     pub fn get_memory_metrics(&self) -> Values {
