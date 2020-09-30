@@ -11,8 +11,7 @@ Vagrant.configure(2) do |config|
   config.vm.provision "shell", privileged: false, inline: <<-SHELL
     sudo apt-get update
     sudo apt-get autoremove -y
-    sudo apt install -y curl
-    sudo apt install -y libssl-dev pkg-config build-essential
+    sudo apt-get install -y --no-install-recommends build-essential curl git libssl-dev pkg-config
 
     cd /src
     if hash rustup; then

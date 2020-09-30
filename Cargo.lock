@@ -129,6 +129,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "compile-time-run"
+version = "0.2.11"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b734f015dfba1d19a262f4a1d4429d01d4e484099a5ecebde2ba771dea9430a1"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "core-foundation"
 version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -483,6 +494,7 @@ name = "mackerel-agent-rs"
 version = "0.1.0"
 dependencies = [
  "clap",
+ "compile-time-run",
  "hostname",
  "lazy_static",
  "mackerel_client",
