@@ -15,7 +15,7 @@ jobs:
             ~/.cargo/git
             ~/.rustup
             target
-          key: ${{ runner.os }}-cargo}
+          key: ${{ runner.os }}-cargo
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
