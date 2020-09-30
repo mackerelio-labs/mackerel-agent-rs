@@ -6,6 +6,6 @@ lazy_static! {
 }
 
 // sanitize_metric_key sanitize metric keys to be Mackerel friendly
-pub fn sanitize_metric_key(key: &String) -> String {
+pub fn sanitize_metric_key(key: &str) -> String {
     SANITIZER_REG.replace_all(key, "_").into()
 }
