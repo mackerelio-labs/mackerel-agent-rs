@@ -25,7 +25,7 @@ impl From<(HashMap<String, f64>, HashMap<String, f64>)> for Values {
 fn network_to_hashmap(nw_stats: Vec<network::Network>) -> HashMap<String, f64> {
     let mut value = HashMap::new();
     for network in nw_stats.into_iter() {
-        let name = crate::util::sanitize_metric_key(network.name);
+        let name = crate::util::sanitize_metric_key(&network.name);
         value.insert(
             format!("interface.{}.rxBytes", name),
             network.rx_bytes as f64,
