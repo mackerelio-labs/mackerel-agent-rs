@@ -10,25 +10,27 @@ impl Agent {
         let current = disk::get().expect("failed to get disk statistics");
         let mut previous_values = HashMap::new();
         for v in &previous {
-            previous_values.insert(v.name.clone(), (v.reads_completed, v.writes_completed));
+            previous_values.insert(v.name.clone(), v);
         }
         let mut current_values = HashMap::new();
         for v in &current {
-            current_values.insert(v.name.clone(), (v.reads_completed, v.writes_completed));
+            current_values.insert(v.name.clone(), v);
         }
         let mut values = HashMap::new();
-        for (device_label, (previous_reads, previous_writes)) in previous_values {
+        for (device_label, previous) in previous_values {
             let sanitized_device_label = util::sanitize_metric_key(&device_label);
             match current_values.get(&device_label) {
                 None => continue,
-                Some((current_reads, current_writes)) => {
+                Some(current) => {
                     values.insert(
                         format!("disk.{}.reads.delta", sanitized_device_label),
-                        (current_reads - previous_reads) as f64 / interval.as_secs() as f64,
+                        (current.reads_completed - previous.reads_completed) as f64
+                            / interval.as_secs() as f64,
                     );
                     values.insert(
                         format!("disk.{}.writes.delta", sanitized_device_label),
-                        (current_writes - previous_writes) as f64 / interval.as_secs() as f64,
+                        (current.writes_completed - previous.writes_completed) as f64
+                            / interval.as_secs() as f64,
                     );
                 }
             }
