@@ -1,7 +1,7 @@
-extern crate mackerel_agent_rs;
+extern crate mackerel_agent;
 
 use clap::{load_yaml, App};
-use mackerel_agent_rs::{config::Config, Agent};
+use mackerel_agent::{config::Config, Agent};
 use mackerel_client::client::Client;
 use std::{fs::File, io::prelude::*, path::Path};
 
@@ -27,7 +27,7 @@ async fn initialize(client: &Client, conf: &Config) -> std::io::Result<String> {
             todo!();
         }
         let hostname = hostname.unwrap().to_str().unwrap().to_owned();
-        let meta = mackerel_agent_rs::host_meta::collect_as_json();
+        let meta = mackerel_agent::host_meta::collect_as_json();
         let param = mackerel_client::create_host_param!({
             name -> format!("{}.rs", hostname) // TODO .rs を付けてるのはは暫定的
             meta -> meta
