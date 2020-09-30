@@ -1,13 +1,13 @@
 use crate::{util, Agent, Values};
-use os_stat_rs::disk;
+use os_stat::Disk;
 use std::{collections::HashMap, time::Duration};
 
 impl Agent {
     pub fn get_disk_metrics() -> Option<Values> {
         let interval = Duration::from_secs(10);
-        let previous = disk::get().expect("failed to get disk statistics");
+        let previous = Disk::get().expect("failed to get disk statistics");
         std::thread::sleep(interval);
-        let current = disk::get().expect("failed to get disk statistics");
+        let current = Disk::get().expect("failed to get disk statistics");
         let mut previous_values = HashMap::new();
         for v in &previous {
             previous_values.insert(v.name.clone(), v);

@@ -1,5 +1,5 @@
 use crate::{Agent, Values};
-use os_stat_rs::network;
+use os_stat::Network;
 use std::collections::HashMap;
 
 const INTERNAL_SECONDS: u64 = 10;
@@ -22,7 +22,7 @@ impl From<(HashMap<String, f64>, HashMap<String, f64>)> for Values {
     }
 }
 
-fn network_to_hashmap(nw_stats: Vec<network::Network>) -> HashMap<String, f64> {
+fn network_to_hashmap(nw_stats: Vec<Network>) -> HashMap<String, f64> {
     let mut value = HashMap::new();
     for network in nw_stats.into_iter() {
         let name = crate::util::sanitize_metric_key(&network.name);
@@ -41,9 +41,9 @@ fn network_to_hashmap(nw_stats: Vec<network::Network>) -> HashMap<String, f64> {
 impl Agent {
     pub fn get_interfaces_metrics() -> Option<Values> {
         let interval = std::time::Duration::from_secs(INTERNAL_SECONDS);
-        let previous = network::get();
+        let previous = Network::get();
         std::thread::sleep(interval);
-        let current = network::get();
+        let current = Network::get();
         match (previous, current) {
             (Ok(previous), Ok(current)) => {
                 let previous_metrics = network_to_hashmap(previous);
