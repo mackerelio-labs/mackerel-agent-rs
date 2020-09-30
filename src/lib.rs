@@ -65,17 +65,19 @@ impl Agent {
         loop {
             interval.tick().await;
             let cpu_metric = self.get_cpu_metrics().unwrap();
+            let filesystem_metric = self.get_filesystem_metrics();
+            let interfaces_metric = self.get_interfaces_metrics().unwrap();
             let loadavg_metric = self.get_loadavg_metric();
             let memory_metric = self.get_memory_metrics();
-            let interfaces_metric = self.get_interfaces_metrics().unwrap();
             let disk_metric = self.get_disk_metrics().unwrap();
             let mut metrics = Values(HashMap::new());
             for v in vec![
                 cpu_metric,
+                disk_metric,
+                filesystem_metric,
+                interfaces_metric,
                 loadavg_metric,
                 memory_metric,
-                interfaces_metric,
-                disk_metric,
             ] {
                 metrics.extend(v.0);
             }
@@ -98,6 +100,7 @@ pub mod host_meta;
 
 mod cpu;
 mod disk;
+mod filesystem;
 mod interface;
 mod loadavg;
 mod memory;
