@@ -1,4 +1,4 @@
-use mackerel_client::{client::Client, metric};
+use mackerel_client::client::Client;
 use std::{
     collections::HashMap,
     sync::mpsc::{self, channel},
@@ -12,8 +12,8 @@ pub struct Values(HashMap<String, f64>);
 // &'a str expects host id.
 pub struct HostMetricWrapper<'a>(&'a str, Values);
 
-impl<'a> Into<Vec<metric::HostMetricValue>> for HostMetricWrapper<'a> {
-    fn into(self) -> Vec<metric::HostMetricValue> {
+impl<'a> Into<Vec<mackerel_client::metric::HostMetricValue>> for HostMetricWrapper<'a> {
+    fn into(self) -> Vec<mackerel_client::metric::HostMetricValue> {
         use std::time::SystemTime;
         let host_id = self.0;
         let value = self.1;
@@ -26,7 +26,7 @@ impl<'a> Into<Vec<metric::HostMetricValue>> for HostMetricWrapper<'a> {
             .into_iter()
             .map(|hmv| {
                 let (name, value) = hmv;
-                metric::HostMetricValue {
+                mackerel_client::metric::HostMetricValue {
                     host_id: host_id.to_owned(),
                     name,
                     value,
@@ -70,8 +70,14 @@ impl Agent {
         loop {
             interval.tick().await;
             let (tx, rx) = channel();
+            // TODO: Quit using Values, then use metrics::HostMetric.
             type F = Box<dyn Fn() -> Values + Send>;
-            let cpu_metric: F = Box::new(|| Self::get_cpu_metrics().unwrap());
+            let cpu_metric: F = Box::new(|| {
+                let metrics = Self::get_cpu_metrics().unwrap();
+                // This line is prepared for only solving type-puzzle...
+                // After when all metrics are done moving to src/metrics, these line will get useless.
+                Values(metrics.value)
+            });
             let disk_metric: F = Box::new(|| Self::get_disk_metrics().unwrap());
             let filesystem_metric: F = Box::new(Self::get_filesystem_metrics);
             let interfaces_metric: F = Box::new(|| Self::get_interfaces_metrics().unwrap());
@@ -118,10 +124,10 @@ impl Agent {
 pub mod config;
 pub mod host_meta;
 
-mod cpu;
 mod disk;
 mod filesystem;
 mod interface;
 mod loadavg;
 mod memory;
+mod metric;
 mod util;

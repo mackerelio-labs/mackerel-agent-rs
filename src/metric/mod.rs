@@ -20,4 +20,4 @@ pub struct HostMetric {
     pub value: MetricValue,
 }
 
-pub mod cpu;
+mod cpu;
