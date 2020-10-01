@@ -8,16 +8,20 @@ impl Agent {
         let previous = Disk::get().expect("failed to get disk statistics");
         std::thread::sleep(interval);
         let current = Disk::get().expect("failed to get disk statistics");
-        let mut previous_values = HashMap::new();
-        for v in previous {
-            let sanitized_device_label = util::sanitize_metric_key(&v.name);
-            previous_values.insert(sanitized_device_label, v);
-        }
-        let mut current_values = HashMap::new();
-        for v in current {
-            let sanitized_device_label = util::sanitize_metric_key(&v.name);
-            current_values.insert(sanitized_device_label, v);
-        }
+        let previous_values: HashMap<_, _> = previous
+            .into_iter()
+            .map(|disk| {
+                let sanitized_device_label = util::sanitize_metric_key(&disk.name);
+                (sanitized_device_label, disk)
+            })
+            .collect();
+        let current_values: HashMap<_, _> = current
+            .into_iter()
+            .map(|disk| {
+                let sanitized_device_label = util::sanitize_metric_key(&disk.name);
+                (sanitized_device_label, disk)
+            })
+            .collect();
         let mut values = HashMap::new();
         for (device_label, previous) in previous_values {
             match current_values.get(&device_label) {
