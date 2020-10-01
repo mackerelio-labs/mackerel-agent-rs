@@ -1,4 +1,4 @@
-# mackerel-agent_rs
+# mackerel-agent-rs
 
 ! This is just an experimental version. !
 
