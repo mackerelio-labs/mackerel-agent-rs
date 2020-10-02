@@ -80,7 +80,8 @@ impl Agent {
             });
             let disk_metric: F = Box::new(|| Self::get_disk_metrics().unwrap());
             let filesystem_metric: F = Box::new(Self::get_filesystem_metrics);
-            let interfaces_metric: F = Box::new(|| Self::get_interfaces_metrics().unwrap());
+            let interfaces_metric: F =
+                Box::new(|| Values(Self::get_interfaces_metrics().unwrap().value));
             let loadavg_metric: F = Box::new(Self::get_loadavg_metric);
             let memory_metric: F = Box::new(Self::get_memory_metrics);
 
@@ -126,7 +127,6 @@ pub mod host_meta;
 
 mod disk;
 mod filesystem;
-mod interface;
 mod loadavg;
 mod memory;
 mod metric;
