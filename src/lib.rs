@@ -78,7 +78,7 @@ impl Agent {
                 // After when all metrics are done moving to src/metrics, these line will get useless.
                 Values(metrics.value)
             });
-            let disk_metric: F = Box::new(|| Self::get_disk_metrics().unwrap());
+            let disk_metric: F = Box::new(|| Values(Self::get_disk_metrics().unwrap().value));
             let filesystem_metric: F = Box::new(Self::get_filesystem_metrics);
             let interfaces_metric: F =
                 Box::new(|| Values(Self::get_interfaces_metrics().unwrap().value));
