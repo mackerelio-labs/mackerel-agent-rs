@@ -51,7 +51,7 @@ async fn main() -> std::io::Result<()> {
     let path = Path::new(
         matches
             .value_of("config")
-            .unwrap_or("/src/mackerel-agent.conf"),
+            .unwrap_or("./mackerel-agent.conf"),
     );
     let conf = dbg!(Config::from_file(path));
     let client = Client::new(&conf.apikey);
