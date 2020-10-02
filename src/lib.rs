@@ -82,7 +82,7 @@ impl Agent {
             let filesystem_metric: F = Box::new(|| Values(Self::get_filesystem_metrics().value));
             let interfaces_metric: F =
                 Box::new(|| Values(Self::get_interfaces_metrics().unwrap().value));
-            let loadavg_metric: F = Box::new(Self::get_loadavg_metric);
+            let loadavg_metric: F = Box::new(|| Values(Self::get_loadavg_metric().value));
             let memory_metric: F = Box::new(Self::get_memory_metrics);
 
             let mut metrics = Values(HashMap::new());
