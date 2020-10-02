@@ -125,9 +125,5 @@ impl Agent {
 pub mod config;
 pub mod host_meta;
 
-mod disk;
-mod filesystem;
-mod loadavg;
-mod memory;
 mod metric;
 mod util;
