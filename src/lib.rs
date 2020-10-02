@@ -66,7 +66,6 @@ impl Agent {
             let loadavg_metric: F = Box::new(Self::get_loadavg_metric);
             let memory_metric: F = Box::new(Self::get_memory_metrics);
 
-            let mut metrics = MetricValue::new();
             for v in vec![
                 cpu_metric,
                 disk_metric,
@@ -82,13 +81,14 @@ impl Agent {
                 });
             }
 
-            // drop tx explicitly because of breaking for ... in rx
+            // drop tx explicitly because mpsc::Reciever waits until all senders dropping.
+            // https://doc.rust-lang.org/std/sync/mpsc/struct.Receiver.html#method.iter
             drop(tx);
 
-            for recieved_metrics in rx {
-                metrics.extend(recieved_metrics.value);
-            }
-
+            let metrics = rx.into_iter().fold(MetricValue::new(), |mut acc, metric| {
+                acc.extend(metric.value);
+                acc
+            });
             self.send_metric(metrics).await;
         }
     }
