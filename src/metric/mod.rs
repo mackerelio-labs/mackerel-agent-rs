@@ -21,3 +21,4 @@ pub struct HostMetric {
 }
 
 mod cpu;
+mod interface;
