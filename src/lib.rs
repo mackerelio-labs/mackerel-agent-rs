@@ -70,7 +70,7 @@ impl Agent {
         loop {
             interval.tick().await;
             let (tx, rx) = channel();
-            // TODO: Quit using Values, then use metrics::HostMetric.
+            // TODO: Quit using Values, then use metric::HostMetric.
             type F = Box<dyn Fn() -> Values + Send>;
             let cpu_metric: F = Box::new(|| {
                 let metrics = Self::get_cpu_metrics().unwrap();
