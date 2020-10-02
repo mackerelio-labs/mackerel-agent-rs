@@ -83,7 +83,7 @@ impl Agent {
             let interfaces_metric: F =
                 Box::new(|| Values(Self::get_interfaces_metrics().unwrap().value));
             let loadavg_metric: F = Box::new(|| Values(Self::get_loadavg_metric().value));
-            let memory_metric: F = Box::new(Self::get_memory_metrics);
+            let memory_metric: F = Box::new(|| Values(Self::get_memory_metrics().value));
 
             let mut metrics = Values(HashMap::new());
             for v in vec![
