@@ -21,4 +21,8 @@ pub struct HostMetric {
 }
 
 mod cpu;
+mod disk;
+mod filesystem;
 mod interface;
+mod loadavg;
+mod memory;
