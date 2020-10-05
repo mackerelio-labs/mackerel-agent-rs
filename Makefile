@@ -41,8 +41,12 @@ ifeq ($(within_docker),)
 endif
 
 .PHONY: start
-start: ## Build and start mackerel_agent in debug mode.
+start: ## Build and start a mackerel_agent in debug mode.
+ifeq ($(within_docker),)
+	docker-compose run --rm app make start
+else
 	cargo run
+endif
 
 .PHONY: test
 test: ## Test.
