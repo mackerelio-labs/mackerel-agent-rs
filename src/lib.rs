@@ -1,28 +1,27 @@
 use mackerel_client::client::Client;
+use metric::{HostMetric, MetricValue};
 use std::{
-    collections::HashMap,
     sync::mpsc::{self, channel},
     thread,
     time::Duration,
 };
 use tokio::time;
 
-#[derive(Debug)]
-pub struct Values(HashMap<String, f64>);
+const INTERVAL: Duration = Duration::from_secs(60);
+
 // &'a str expects host id.
-pub struct HostMetricWrapper<'a>(&'a str, Values);
+pub struct HostMetricWrapper<'a>(&'a str, MetricValue);
 
 impl<'a> Into<Vec<mackerel_client::metric::HostMetricValue>> for HostMetricWrapper<'a> {
     fn into(self) -> Vec<mackerel_client::metric::HostMetricValue> {
         use std::time::SystemTime;
         let host_id = self.0;
         let value = self.1;
-        let host_metric_value = value.0;
         let now = match SystemTime::now().duration_since(SystemTime::UNIX_EPOCH) {
             Ok(n) => n.as_secs(),
             Err(_) => panic!("SystemTime before UNIX EPOCH!"),
         };
-        host_metric_value
+        value
             .into_iter()
             .map(|hmv| {
                 let (name, value) = hmv;
@@ -34,18 +33,6 @@ impl<'a> Into<Vec<mackerel_client::metric::HostMetricValue>> for HostMetricWrapp
                 }
             })
             .collect()
-    }
-}
-
-impl std::ops::Deref for Values {
-    type Target = HashMap<String, f64>;
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-impl std::ops::DerefMut for Values {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
     }
 }
 
@@ -66,26 +53,19 @@ impl Agent {
     }
 
     pub async fn run(&self) {
-        let mut interval = time::interval(Duration::from_secs(60));
+        let mut interval = time::interval(INTERVAL);
         loop {
             interval.tick().await;
             let (tx, rx) = channel();
-            // TODO: Quit using Values, then use metric::HostMetric.
-            type F = Box<dyn Fn() -> Values + Send>;
-            let cpu_metric: F = Box::new(|| {
-                let metrics = Self::get_cpu_metrics().unwrap();
-                // This line is prepared for only solving type-puzzle...
-                // After when all metrics are done moving to src/metrics, these line will get useless.
-                Values(metrics.value)
-            });
+
+            type F = Box<dyn Fn() -> HostMetric + Send>;
+            let cpu_metric: F = Box::new(|| Self::get_cpu_metrics().unwrap());
             let disk_metric: F = Box::new(|| Self::get_disk_metrics().unwrap());
             let filesystem_metric: F = Box::new(Self::get_filesystem_metrics);
-            let interfaces_metric: F =
-                Box::new(|| Values(Self::get_interfaces_metrics().unwrap().value));
+            let interfaces_metric: F = Box::new(|| Self::get_interfaces_metrics().unwrap());
             let loadavg_metric: F = Box::new(Self::get_loadavg_metric);
             let memory_metric: F = Box::new(Self::get_memory_metrics);
 
-            let mut metrics = Values(HashMap::new());
             for v in vec![
                 cpu_metric,
                 disk_metric,
@@ -101,18 +81,19 @@ impl Agent {
                 });
             }
 
-            // drop tx explicitly because of breaking for ... in rx
+            // drop tx explicitly because mpsc::Reciever waits until all senders dropping.
+            // https://doc.rust-lang.org/std/sync/mpsc/struct.Receiver.html#method.iter
             drop(tx);
 
-            for recieved_metrics in rx {
-                metrics.extend(recieved_metrics.0);
-            }
-
+            let metrics = rx.into_iter().fold(MetricValue::new(), |mut acc, metric| {
+                acc.extend(metric.value);
+                acc
+            });
             self.send_metric(metrics).await;
         }
     }
 
-    async fn send_metric(&self, val: Values) {
+    async fn send_metric(&self, val: MetricValue) {
         let metric = HostMetricWrapper(&self.host_id, val).into();
         // TODO: error handling.
         let result = self.client.post_metrics(metric).await;

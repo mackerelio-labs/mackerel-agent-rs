@@ -1,13 +1,16 @@
-use crate::{util, Agent, Values};
+use super::{HostMetric, HostMetricKind, MetricValue};
+use crate::{util, Agent};
 use os_stat::Disk;
 use std::{collections::HashMap, time::Duration};
 
-impl Agent {
-    pub fn get_disk_metrics() -> Option<Values> {
-        let interval = Duration::from_secs(10);
-        let previous = Disk::get().expect("failed to get disk statistics");
-        std::thread::sleep(interval);
-        let current = Disk::get().expect("failed to get disk statistics");
+type Disks = Vec<Disk>;
+
+// TODO: investigate how many seconds are used in mackerel-agent
+const INTERVAL: Duration = Duration::from_secs(10);
+
+impl From<(Disks, Disks)> for HostMetric {
+    fn from((previous, current): (Disks, Disks)) -> Self {
+        let kind = HostMetricKind::Disk;
         let previous_values: HashMap<_, _> = previous
             .into_iter()
             .map(|disk| {
@@ -22,24 +25,35 @@ impl Agent {
                 (sanitized_device_label, disk)
             })
             .collect();
-        let mut values = HashMap::new();
+
+        let mut value = MetricValue::new();
         for (device_label, previous) in previous_values {
             match current_values.get(&device_label) {
                 None => continue,
                 Some(current) => {
-                    values.insert(
+                    value.insert(
                         format!("disk.{}.reads.delta", device_label),
                         (current.reads_completed - previous.reads_completed) as f64
-                            / interval.as_secs() as f64,
+                            / INTERVAL.as_secs() as f64,
                     );
-                    values.insert(
+                    value.insert(
                         format!("disk.{}.writes.delta", device_label),
                         (current.writes_completed - previous.writes_completed) as f64
-                            / interval.as_secs() as f64,
+                            / INTERVAL.as_secs() as f64,
                     );
                 }
             }
         }
-        Some(Values(values))
+
+        Self { kind, value }
+    }
+}
+impl Agent {
+    // TODO: When failed to get, returns None.
+    pub fn get_disk_metrics() -> Option<HostMetric> {
+        let previous = Disk::get().expect("failed to get disk statistics");
+        std::thread::sleep(INTERVAL);
+        let current = Disk::get().expect("failed to get disk statistics");
+        Some((previous, current).into())
     }
 }
