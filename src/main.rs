@@ -89,7 +89,7 @@ async fn main() -> std::io::Result<()> {
             panic!("failed to remove pid file!")
         }
     });
-    let agent = Agent::new(conf, host_id.unwrap());
+    let mut agent = Agent::new(conf, host_id.unwrap());
     agent.run().await;
     Ok(())
 }

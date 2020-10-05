@@ -39,6 +39,8 @@ pub struct Agent {
     pub config: config::Config,
     pub client: Box<dyn client::Clientable>,
     pub host_id: String,
+    // When failed to post metric, agent will heap up the metric for next time posting.
+    metric: Vec<mackerel_client::metric::HostMetricValue>,
 }
 
 impl Agent {
@@ -47,10 +49,11 @@ impl Agent {
             client: Box::new(client::Client::new(&config.apikey)),
             config,
             host_id,
+            metric: vec![],
         }
     }
 
-    pub async fn run(&self) {
+    pub async fn run(&mut self) {
         let mut interval = time::interval(INTERVAL);
         loop {
             interval.tick().await;
@@ -91,13 +94,13 @@ impl Agent {
         }
     }
 
-    async fn send_metric(&self, val: MetricValue) {
-        let metric = HostMetricWrapper(&self.host_id, val).into();
-        // TODO: error handling.
-        let result = self.client.post_metrics(metric).await;
-        if result.is_err() {
-            dbg!(result.err());
-        }
+    async fn send_metric(&mut self, val: MetricValue) {
+        let mut metric: Vec<_> = HostMetricWrapper(&self.host_id, val).into();
+        metric.extend(self.metric.clone());
+        let result = self.client.post_metrics(metric.clone()).await;
+        // If Ok, then heaped metric must be empty, else extend it.
+        // TODO: Drop metric if it is too ancient.
+        self.metric = if result.is_ok() { vec![] } else { metric };
     }
 }
 
