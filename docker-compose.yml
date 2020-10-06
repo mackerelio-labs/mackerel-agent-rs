@@ -1,0 +1,45 @@
+---
+version: "3"
+
+services:
+  app:
+    build:
+      cache_from: []
+      context: .
+      dockerfile: deployments/development/Dockerfile
+    depends_on: [app-src]
+    environment:
+      MACKEREL_APIKEY: ${MACKEREL_APIKEY}
+    image: mackerel-agent-rs:latest
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "2"
+    volumes:
+      - app-src:/mnt
+
+  app-src:
+    image: eugenmayer/unison:2.51.2.2
+    environment:
+      APP_VOLUME: /app_sync
+      HOST_VOLUME: /host_sync
+      TZ: Asia/Tokyo
+      UNISON_ARGS: |
+        -debug default -prefer /host_sync -numericids -auto -batch -fat \
+        -ignore 'Name .#*' \
+        -ignore 'Name target/*' \
+      UNISON_DEST: /app_sync
+      UNISON_SRC: /host_sync
+      UNISON_WATCH_ARGS: "-repeat watch"
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "2"
+    volumes:
+      - ${PWD:-.}/deployments/development/src-entrypoints:/docker-entrypoint.d/:ro
+      - ${PWD:-.}/deployments/development/supervisor.conf.d:/etc/supervisor.conf.d:ro
+      - ${PWD:-.}:/host_sync:cached
+      - app-src:/app_sync
+
+volumes:
+  app-src:

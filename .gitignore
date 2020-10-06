@@ -1,4 +1,4 @@
+.vagrant
 /target
-.vagrant/
-mackerel-agent.conf
 id
+mackerel-agent.conf
