@@ -1,6 +1,6 @@
 #!/bin/bash -eux
 
-if [ ! -d node_modules ] ; then
+if [ ! -d target ] ; then
   rsync -au /tmp/target .
 fi
 set +u
