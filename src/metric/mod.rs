@@ -15,6 +15,7 @@ pub enum HostMetricKind {
     Custom(String),
 }
 
+#[derive(Debug, PartialEq)]
 pub struct HostMetric {
     pub kind: HostMetricKind,
     pub value: MetricValue,

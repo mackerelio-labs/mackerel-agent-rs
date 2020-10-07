@@ -58,13 +58,14 @@ impl Agent {
             interval.tick().await;
             let (tx, rx) = channel();
 
-            type F = Box<dyn Fn() -> HostMetric + Send>;
+            type F = Box<dyn Send + FnOnce() -> HostMetric>;
             let cpu_metric: F = Box::new(|| Self::get_cpu_metrics().unwrap());
             let disk_metric: F = Box::new(|| Self::get_disk_metrics().unwrap());
             let filesystem_metric: F = Box::new(Self::get_filesystem_metrics);
             let interfaces_metric: F = Box::new(|| Self::get_interfaces_metrics().unwrap());
             let loadavg_metric: F = Box::new(Self::get_loadavg_metric);
             let memory_metric: F = Box::new(Self::get_memory_metrics);
+            let custom_metric: F = self.get_custom();
 
             for v in vec![
                 cpu_metric,
@@ -73,6 +74,7 @@ impl Agent {
                 interfaces_metric,
                 loadavg_metric,
                 memory_metric,
+                custom_metric,
             ] {
                 let tx = mpsc::Sender::clone(&tx);
                 thread::spawn(move || {
@@ -101,6 +103,32 @@ impl Agent {
             dbg!(result.err());
         }
     }
+
+    fn get_custom(&self) -> Box<dyn Send + FnOnce() -> HostMetric> {
+        use std::process::Command;
+        let kind = metric::HostMetricKind::Custom("custom".into());
+
+        if let Some(command) = self.config.custom.clone() {
+            Box::new(move || {
+                let output = Command::new("sh")
+                    .arg("-c")
+                    .arg(command)
+                    .output()
+                    .expect("failed to execute process");
+                let val = String::from_utf8(output.stdout).unwrap();
+                let mut value = MetricValue::new();
+                if let Ok(val) = val.trim_end().parse::<f64>() {
+                    value.insert("custom.metric.value".into(), val);
+                };
+                HostMetric { kind, value }
+            })
+        } else {
+            Box::new(move || HostMetric {
+                kind,
+                value: metric::MetricValue::new(),
+            })
+        }
+    }
 }
 
 pub mod config;
@@ -108,3 +136,32 @@ pub mod host_meta;
 
 mod metric;
 mod util;
+
+#[test]
+fn agent_get_custom() {
+    // case for subprocess exited normally.
+    let mut cfg = config::Config::new();
+    cfg.custom = Some("/bin/echo 10".into());
+    let agent = Agent::new(cfg, "host_id".into());
+    let cls = agent.get_custom();
+
+    let expected = HostMetric {
+        kind: metric::HostMetricKind::Custom("custom".into()),
+        value: vec![("custom.metric.value".into(), 10f64)]
+            .into_iter()
+            .collect(),
+    };
+    assert_eq!(cls(), expected);
+
+    // case for subprocess exited unormally.
+    let mut cfg = config::Config::new();
+    cfg.custom = Some("/bin/echo hello, world".into());
+    let agent = Agent::new(cfg, "host_id".into());
+    let cls = agent.get_custom();
+
+    let expected = HostMetric {
+        kind: metric::HostMetricKind::Custom("custom".into()),
+        value: metric::MetricValue::new(),
+    };
+    assert_eq!(cls(), expected);
+}
