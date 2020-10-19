@@ -1,3 +1,4 @@
+#![feature(async_closure)]
 extern crate mackerel_agent;
 
 use clap::{load_yaml, App};
@@ -8,12 +9,17 @@ use std::{fs::File, io::prelude::*, path::Path};
 // const HOST_PATH: &str = "/var/lib/mackerel-agent";
 // TODO: change path as /var/lib/mackerel-agent/id
 const HOST_ID_PATH: &str = "./id";
+const PID_PATH: &str = "./pid";
 
 // Register the running host or get host own id.
 async fn initialize(client: &Client, conf: &Config) -> std::io::Result<String> {
-    // if !Path::exists(Path::new(HOST_PATH)) {
-    //     std::fs::create_dir(HOST_PATH)?;
-    // }
+    if Path::new(PID_PATH).exists() {
+        panic!("Other mackerel-agent-rs process is working on!");
+    }
+
+    // todo: write the pid to pid_file.
+    let _pid_file = File::create(PID_PATH)?;
+
     Ok(if let Ok(file) = File::open(HOST_ID_PATH) {
         let mut file = file;
         let mut buf = String::new();
@@ -59,6 +65,16 @@ async fn main() -> std::io::Result<()> {
     if host_id.is_err() {
         todo!()
     }
+    // Ctrl-C handler for graceful-shutdown.
+    tokio::spawn(async move {
+        if tokio::signal::ctrl_c().await.is_ok() {
+            println!("Ctrl-C is detected, gonna graceful shutdown.");
+            if std::fs::remove_file(PID_PATH).is_ok() {
+                std::process::exit(0);
+            }
+            panic!("failed to remove pid file!")
+        }
+    });
     let agent = Agent::new(conf, host_id.unwrap());
     agent.run().await;
     Ok(())
