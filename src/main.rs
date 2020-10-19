@@ -1,3 +1,4 @@
+#![feature(async_closure)]
 extern crate mackerel_agent;
 
 use clap::{load_yaml, App};
@@ -64,6 +65,16 @@ async fn main() -> std::io::Result<()> {
     if host_id.is_err() {
         todo!()
     }
+    // Ctrl-C handler for graceful-shutdown.
+    tokio::spawn(async move {
+        if tokio::signal::ctrl_c().await.is_ok() {
+            println!("Ctrl-C is detected, gonna graceful shutdown.");
+            if std::fs::remove_file(PID_PATH).is_ok() {
+                std::process::exit(0);
+            }
+            panic!("failed to remove pid file!")
+        }
+    });
     let agent = Agent::new(conf, host_id.unwrap());
     agent.run().await;
     Ok(())
