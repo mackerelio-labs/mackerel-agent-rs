@@ -4,7 +4,7 @@ extern crate mackerel_agent;
 use clap::{load_yaml, App};
 use mackerel_agent::{config::Config, Agent};
 use mackerel_client::client::Client;
-use std::{fs::File, io::prelude::*, path::Path};
+use std::{fs::File, io::prelude::*, path::Path, process};
 
 // const HOST_PATH: &str = "/var/lib/mackerel-agent";
 // TODO: change path as /var/lib/mackerel-agent/id
@@ -17,8 +17,8 @@ async fn initialize(client: &Client, conf: &Config) -> std::io::Result<String> {
         panic!("Other mackerel-agent-rs process is working on!");
     }
 
-    // todo: write the pid to pid_file.
-    let _pid_file = File::create(PID_PATH)?;
+    let mut pid_file = File::create(PID_PATH)?;
+    pid_file.write_all(process::id().to_string().as_bytes())?;
 
     Ok(if let Ok(file) = File::open(HOST_ID_PATH) {
         let mut file = file;
@@ -70,7 +70,7 @@ async fn main() -> std::io::Result<()> {
         if tokio::signal::ctrl_c().await.is_ok() {
             println!("Ctrl-C is detected, gonna graceful shutdown.");
             if std::fs::remove_file(PID_PATH).is_ok() {
-                std::process::exit(0);
+                process::exit(0);
             }
             panic!("failed to remove pid file!")
         }
