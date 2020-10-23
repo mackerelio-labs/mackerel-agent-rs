@@ -56,7 +56,12 @@ async fn main() -> std::io::Result<()> {
         .version("0.1.0")
         .author("Krout0n <krouton@hatena.ne.jp>")
         .arg(Arg::new("config"))
+        .subcommand(App::new("once").about("Unimplemented!! This will execute metric collection and display standard output just one time. Metrics will not be posted."))
         .get_matches();
+    let subcmds = matches.subcommand().unwrap();
+    if subcmds.0 == "once" {
+        unimplemented!()
+    }
     let path = Path::new(
         matches
             .value_of("config")
