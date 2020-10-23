@@ -5,7 +5,7 @@ authors = ["Krout0n <krouton@hatena.ne.jp>", "dekokun <dekokun@hatena.ne.jp>", "
 edition = "2018"
 
 [dependencies]
-clap = {version = "2", features = ["yaml"]}
+clap = "3.0.0-beta.2"
 compile-time-run = "0.2.11"
 hostname = "^0.3"
 lazy_static = "1.4.0"
