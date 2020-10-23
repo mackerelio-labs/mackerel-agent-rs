@@ -1,7 +1,7 @@
 #![feature(async_closure)]
 extern crate mackerel_agent;
 
-use clap::{load_yaml, App};
+use clap::{App, Arg};
 use mackerel_agent::{config::Config, Agent};
 use mackerel_client::client::Client;
 use std::{fs::File, io::prelude::*, path::Path};
@@ -52,8 +52,11 @@ async fn initialize(client: &Client, conf: &Config) -> std::io::Result<String> {
 
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
-    let yaml = load_yaml!("../cli.yml");
-    let matches = App::from_yaml(yaml).get_matches();
+    let matches = App::new("mackerel-agent-rs")
+        .version("0.1.0")
+        .author("Krout0n <krouton@hatena.ne.jp>")
+        .arg(Arg::new("config"))
+        .get_matches();
     let path = Path::new(
         matches
             .value_of("config")
