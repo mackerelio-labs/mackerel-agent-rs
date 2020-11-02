@@ -15,9 +15,10 @@ RUN apt-get -y update \
     rsync \
  && rustup default nightly \
  && cargo install cargo-watch \
+ && rustup toolchain add nightly-2020-10-08 \
  && rustup component add clippy \
  && rustup component add rust-src \
- && rustup component add rustfmt \
+ && rustup component add --toolchain nightly-2020-10-08 rustfmt \
  && apt-get clean \
  && rm -rf /var/lib/apt/lists/*
 
