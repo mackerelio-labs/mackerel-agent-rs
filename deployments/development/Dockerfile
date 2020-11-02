@@ -15,9 +15,10 @@ RUN apt-get -y update \
     rsync \
  && rustup default nightly \
  && cargo install cargo-watch \
- && rustup component add clippy \
- && rustup component add rust-src \
- && rustup component add rustfmt \
+ && rustup toolchain install nightly --allow-downgrade -c \
+    clippy \
+    rust-src \
+    rustfmt \
  && apt-get clean \
  && rm -rf /var/lib/apt/lists/*
 
