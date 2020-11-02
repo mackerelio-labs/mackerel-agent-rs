@@ -50,7 +50,7 @@ endif
 
 .PHONY: test
 test: ## Test.
-	cargo fmt --all -- --check
+	cargo +nightly-2020-10-08 fmt --all -- --check
 	cargo clippy -- -D warnings
 	cargo test --no-fail-fast -- --nocapture
 ifeq ($(within_docker),)
