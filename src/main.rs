@@ -38,6 +38,7 @@ async fn initialize(client: &Client, conf: &Config) -> std::io::Result<String> {
             name -> format!("{}.rs", hostname) // TODO .rs を付けてるのはは暫定的
             meta -> meta
             role_fullnames -> conf.roles.clone()
+            display_name -> conf.display_name.clone()
         });
         let result = client.create_host(param).await;
         if result.is_err() {
