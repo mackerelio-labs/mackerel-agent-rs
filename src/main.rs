@@ -35,9 +35,10 @@ async fn initialize(client: &Client, conf: &Config) -> std::io::Result<String> {
         let hostname = hostname.unwrap().to_str().unwrap().to_owned();
         let meta = mackerel_agent::host_meta::collect_as_json();
         let param = mackerel_client::create_host_param!({
-            name -> format!("{}.rs", hostname) // TODO .rs を付けてるのはは暫定的
+            name -> format!("{}.rs", hostname) // TODO: Remove .rs
             meta -> meta
             role_fullnames -> conf.roles.clone()
+            display_name -> conf.display_name.clone()
         });
         let result = client.create_host(param).await;
         if result.is_err() {
