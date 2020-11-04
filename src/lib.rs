@@ -1,4 +1,3 @@
-use mackerel_client::client::Client;
 use metric::{HostMetric, MetricValue};
 use std::{
     sync::mpsc::{self, channel},
@@ -36,17 +35,16 @@ impl<'a> Into<Vec<mackerel_client::metric::HostMetricValue>> for HostMetricWrapp
     }
 }
 
-#[derive(Debug)]
 pub struct Agent {
     pub config: config::Config,
-    pub client: Client,
+    pub client: Box<dyn client::Clientable>,
     pub host_id: String,
 }
 
 impl Agent {
     pub fn new(config: config::Config, host_id: String) -> Self {
         Self {
-            client: Client::new(&config.apikey),
+            client: Box::new(client::Client::new(&config.apikey)),
             config,
             host_id,
         }
@@ -106,5 +104,6 @@ impl Agent {
 pub mod config;
 pub mod host_meta;
 
+mod client;
 mod metric;
 mod util;
