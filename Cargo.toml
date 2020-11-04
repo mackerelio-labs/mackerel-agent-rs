@@ -5,6 +5,7 @@ authors = ["Krout0n <krouton@hatena.ne.jp>", "dekokun <dekokun@hatena.ne.jp>", "
 edition = "2018"
 
 [dependencies]
+async-trait = "0.1.41"
 clap = "3.0.0-beta.2"
 compile-time-run = "0.2.11"
 hostname = "^0.3"
@@ -21,3 +22,6 @@ toml = "0.5"
 codegen-units = 1
 lto = true
 opt-level = "s"
+
+[dev-dependencies]
+mockall = "0.8.0"
