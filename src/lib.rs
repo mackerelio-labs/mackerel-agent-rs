@@ -9,6 +9,7 @@ use tokio::time;
 const INTERVAL: Duration = Duration::from_secs(60);
 
 // &'a str expects host id.
+#[derive(Debug, PartialEq)]
 pub struct HostMetricWrapper<'a>(&'a str, MetricValue);
 
 impl<'a> Into<Vec<mackerel_client::metric::HostMetricValue>> for HostMetricWrapper<'a> {
@@ -110,3 +111,61 @@ pub mod host_meta;
 mod client;
 mod metric;
 mod util;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::client::Clientable;
+    use futures::future::ready;
+    use mackerel_client::errors::{Error, ErrorKind};
+    use mockall::predicate::*;
+    use reqwest::StatusCode;
+
+    impl Agent {
+        fn new_with_clientable(client: Box<dyn Clientable>) -> Self {
+            Self {
+                client,
+                config: config::Config::default(),
+                host_id: "host_id_1".to_string(),
+                metric: vec![],
+            }
+        }
+    }
+
+    #[tokio::test]
+    async fn heaping_metric() {
+        let mut heaped_metric = MetricValue::new();
+        heaped_metric.insert("cpu.user.percentage".to_string(), 20f64);
+
+        let v: Vec<_> = HostMetricWrapper("host_id_1", heaped_metric.clone()).into();
+        let mut mocked_client = client::MockClientable::new();
+
+        // Test case for heaping up metric.
+        mocked_client
+            .expect_post_metrics()
+            .with(eq(v.clone()))
+            .times(1)
+            .returning(move |_| {
+                Box::pin(ready(Err(Error(
+                    ErrorKind::ApiError(StatusCode::BAD_GATEWAY, "Bad gateway".to_string()),
+                    error_chain::State::default(),
+                ))))
+            });
+        let mut client = Agent::new_with_clientable(Box::new(mocked_client));
+        client.send_metric(heaped_metric.clone()).await;
+        assert_eq!(client.metric, v);
+
+        // Test case for succeeding to post metric.
+        heaped_metric.insert("cpu.guest.percentage".to_string(), 30f64);
+        let v: Vec<_> = HostMetricWrapper("host_id_1", heaped_metric.clone()).into();
+        let mut mocked_client = client::MockClientable::new();
+        mocked_client
+            .expect_post_metrics()
+            .with(eq(v.clone()))
+            .times(1)
+            .returning(move |_| Box::pin(ready(Ok(()))));
+        let mut client = Agent::new_with_clientable(Box::new(mocked_client));
+        client.send_metric(heaped_metric.clone()).await;
+        assert_eq!(client.metric, vec![]);
+    }
+}
