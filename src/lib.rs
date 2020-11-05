@@ -9,6 +9,7 @@ use tokio::time;
 const INTERVAL: Duration = Duration::from_secs(60);
 
 // &'a str expects host id.
+#[derive(Debug, PartialEq)]
 pub struct HostMetricWrapper<'a>(&'a str, MetricValue);
 
 impl<'a> Into<Vec<mackerel_client::metric::HostMetricValue>> for HostMetricWrapper<'a> {
@@ -39,6 +40,8 @@ pub struct Agent {
     pub config: config::Config,
     pub client: Box<dyn client::Clientable>,
     pub host_id: String,
+    // When failed to post metric, agent will heap up the metric for next time posting.
+    metric: Vec<mackerel_client::metric::HostMetricValue>,
 }
 
 impl Agent {
@@ -47,10 +50,11 @@ impl Agent {
             client: Box::new(client::Client::new(&config.apikey)),
             config,
             host_id,
+            metric: vec![],
         }
     }
 
-    pub async fn run(&self) {
+    pub async fn run(&mut self) {
         let mut interval = time::interval(INTERVAL);
         loop {
             interval.tick().await;
@@ -91,13 +95,13 @@ impl Agent {
         }
     }
 
-    async fn send_metric(&self, val: MetricValue) {
-        let metric = HostMetricWrapper(&self.host_id, val).into();
-        // TODO: error handling.
-        let result = self.client.post_metrics(metric).await;
-        if result.is_err() {
-            dbg!(result.err());
-        }
+    async fn send_metric(&mut self, val: MetricValue) {
+        let mut metric: Vec<_> = HostMetricWrapper(&self.host_id, val).into();
+        metric.extend(self.metric.clone());
+        let result = self.client.post_metrics(metric.clone()).await;
+        // If Ok, then heaped metric must be empty, else extend it.
+        // TODO: Drop metric if it is too ancient.
+        self.metric = if result.is_ok() { vec![] } else { metric };
     }
 }
 
@@ -107,3 +111,61 @@ pub mod host_meta;
 mod client;
 mod metric;
 mod util;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::client::Clientable;
+    use futures::future::ready;
+    use mackerel_client::errors::{Error, ErrorKind};
+    use mockall::predicate::*;
+    use reqwest::StatusCode;
+
+    impl Agent {
+        fn new_with_clientable(client: Box<dyn Clientable>) -> Self {
+            Self {
+                client,
+                config: config::Config::default(),
+                host_id: "host_id_1".to_string(),
+                metric: vec![],
+            }
+        }
+    }
+
+    #[tokio::test]
+    async fn heaping_metric() {
+        let mut heaped_metric = MetricValue::new();
+        heaped_metric.insert("cpu.user.percentage".to_string(), 20f64);
+
+        let v: Vec<_> = HostMetricWrapper("host_id_1", heaped_metric.clone()).into();
+        let mut mocked_client = client::MockClientable::new();
+
+        // Test case for heaping up metric.
+        mocked_client
+            .expect_post_metrics()
+            .with(eq(v.clone()))
+            .times(1)
+            .returning(move |_| {
+                Box::pin(ready(Err(Error(
+                    ErrorKind::ApiError(StatusCode::BAD_GATEWAY, "Bad gateway".to_string()),
+                    error_chain::State::default(),
+                ))))
+            });
+        let mut client = Agent::new_with_clientable(Box::new(mocked_client));
+        client.send_metric(heaped_metric.clone()).await;
+        assert_eq!(client.metric, v);
+
+        // Test case for succeeding to post metric.
+        heaped_metric.insert("cpu.guest.percentage".to_string(), 30f64);
+        let v: Vec<_> = HostMetricWrapper("host_id_1", heaped_metric.clone()).into();
+        let mut mocked_client = client::MockClientable::new();
+        mocked_client
+            .expect_post_metrics()
+            .with(eq(v.clone()))
+            .times(1)
+            .returning(move |_| Box::pin(ready(Ok(()))));
+        let mut client = Agent::new_with_clientable(Box::new(mocked_client));
+        client.send_metric(heaped_metric.clone()).await;
+        assert_eq!(client.metric, vec![]);
+    }
+}
