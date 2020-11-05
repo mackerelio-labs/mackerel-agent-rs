@@ -1,7 +1,11 @@
 use async_trait::async_trait;
 
+#[cfg(test)]
+use mockall::automock;
+
 // This trait is defined because of mocking tests.
 #[async_trait]
+#[cfg_attr(test, automock)]
 pub trait Clientable {
     // see: https://github.com/Krout0n/mackerel-client-rs/blob/e49fc4fb535363db30aa876ccbe030ad7b59a8b0/src/host.rs#L129-L138
     async fn post_metrics(
