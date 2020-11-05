@@ -24,4 +24,7 @@ lto = true
 opt-level = "s"
 
 [dev-dependencies]
+error-chain = "0.12.2"
+futures = "0.3"
 mockall = "0.8.0"
+reqwest = { version = "0.10.7", features = ["json"] }
