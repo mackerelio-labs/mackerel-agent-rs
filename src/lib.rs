@@ -1,5 +1,6 @@
 use metric::{HostMetric, MetricValue};
 use std::{
+    collections::VecDeque,
     sync::mpsc::{self, channel},
     thread,
     time::Duration,
@@ -41,7 +42,7 @@ pub struct Agent {
     pub client: Box<dyn client::Clientable>,
     pub host_id: String,
     // When failed to post metric, agent will heap up the metric for next time posting.
-    metric: Vec<mackerel_client::metric::HostMetricValue>,
+    heaped_metrics: VecDeque<Vec<mackerel_client::metric::HostMetricValue>>,
 }
 
 impl Agent {
@@ -50,7 +51,7 @@ impl Agent {
             client: Box::new(client::Client::new(&config.apikey)),
             config,
             host_id,
-            metric: vec![],
+            heaped_metrics: VecDeque::new(),
         }
     }
 
@@ -96,12 +97,28 @@ impl Agent {
     }
 
     async fn send_metric(&mut self, val: MetricValue) {
-        let mut metric: Vec<_> = HostMetricWrapper(&self.host_id, val).into();
-        metric.extend(self.metric.clone());
-        let result = self.client.post_metrics(metric.clone()).await;
+        let metric: Vec<_> = HostMetricWrapper(&self.host_id, val).into();
+        let post_metrics_with_heaped =
+            self.heaped_metrics
+                .clone()
+                .into_iter()
+                .fold(metric.clone(), |mut acc, hmv| {
+                    acc.extend(hmv);
+                    acc
+                });
+        let result = self.client.post_metrics(post_metrics_with_heaped).await;
+
         // If Ok, then heaped metric must be empty, else extend it.
-        // TODO: Drop metric if it is too ancient.
-        self.metric = if result.is_ok() { vec![] } else { metric };
+        self.heaped_metrics = if result.is_ok() {
+            VecDeque::new()
+        } else {
+            // Drop the most previous metrics if it's more than 6 hours ago.
+            if 60 * 6 <= self.heaped_metrics.len() {
+                self.heaped_metrics.pop_front();
+            }
+            self.heaped_metrics.push_back(metric);
+            self.heaped_metrics.clone()
+        };
     }
 }
 
@@ -118,7 +135,6 @@ mod tests {
     use crate::client::Clientable;
     use futures::future::ready;
     use mackerel_client::errors::{Error, ErrorKind};
-    use mockall::predicate::*;
     use reqwest::StatusCode;
 
     impl Agent {
@@ -127,13 +143,13 @@ mod tests {
                 client,
                 config: config::Config::default(),
                 host_id: "host_id_1".to_string(),
-                metric: vec![],
+                heaped_metrics: VecDeque::new(),
             }
         }
     }
 
     #[tokio::test]
-    async fn heaping_metric() {
+    async fn heap_metric_when_failed() {
         let mut heaped_metric = MetricValue::new();
         heaped_metric.insert("cpu.user.percentage".to_string(), 20f64);
 
@@ -141,31 +157,68 @@ mod tests {
         let mut mocked_client = client::MockClientable::new();
 
         // Test case for heaping up metric.
-        mocked_client
-            .expect_post_metrics()
-            .with(eq(v.clone()))
-            .times(1)
-            .returning(move |_| {
-                Box::pin(ready(Err(Error(
-                    ErrorKind::ApiError(StatusCode::BAD_GATEWAY, "Bad gateway".to_string()),
-                    error_chain::State::default(),
-                ))))
-            });
+        mocked_client.expect_post_metrics().returning(move |_| {
+            Box::pin(ready(Err(Error(
+                ErrorKind::ApiError(StatusCode::BAD_GATEWAY, "Bad gateway".to_string()),
+                error_chain::State::default(),
+            ))))
+        });
         let mut client = Agent::new_with_clientable(Box::new(mocked_client));
-        client.send_metric(heaped_metric.clone()).await;
-        assert_eq!(client.metric, v);
 
-        // Test case for succeeding to post metric.
+        client.send_metric(heaped_metric.clone()).await;
+        let mut expected = VecDeque::new();
+        expected.push_back(v);
+        assert_eq!(client.heaped_metrics, expected);
+    }
+
+    #[tokio::test]
+    async fn clear_metric_when_successed() {
+        let mut heaped_metric = MetricValue::new();
         heaped_metric.insert("cpu.guest.percentage".to_string(), 30f64);
-        let v: Vec<_> = HostMetricWrapper("host_id_1", heaped_metric.clone()).into();
         let mut mocked_client = client::MockClientable::new();
         mocked_client
             .expect_post_metrics()
-            .with(eq(v.clone()))
-            .times(1)
             .returning(move |_| Box::pin(ready(Ok(()))));
         let mut client = Agent::new_with_clientable(Box::new(mocked_client));
+
         client.send_metric(heaped_metric.clone()).await;
-        assert_eq!(client.metric, vec![]);
+        assert_eq!(client.heaped_metrics, VecDeque::new());
+    }
+
+    #[tokio::test]
+    async fn drop_the_exceeded_metric_when_failed() {
+        let mut heaped_metric = MetricValue::new();
+        heaped_metric.insert("cpu.guest.percentage".to_string(), 30f64);
+        let will_be_expired = heaped_metric.clone();
+        let mut will_be_inserted = heaped_metric.clone();
+        will_be_inserted.insert("loadavg1".to_string(), 1f64);
+
+        // Insert 60 * 6 metrics.
+        let mut client_heaped_metrics = VecDeque::new();
+        client_heaped_metrics
+            .push_back(HostMetricWrapper("host_id_1", will_be_expired.clone()).into());
+        for _ in 0..(60 * 6 - 1) {
+            client_heaped_metrics.push_back(vec![]);
+        }
+
+        let mut mocked_client = client::MockClientable::new();
+        mocked_client.expect_post_metrics().returning(move |_| {
+            Box::pin(ready(Err(Error(
+                ErrorKind::ApiError(StatusCode::BAD_GATEWAY, "Bad gateway".to_string()),
+                error_chain::State::default(),
+            ))))
+        });
+        let mut client = Agent {
+            heaped_metrics: client_heaped_metrics,
+            ..Agent::new_with_clientable(Box::new(mocked_client))
+        };
+
+        client.send_metric(will_be_inserted.clone()).await;
+        // Assert the head of heaped_metrics isn't will_be_expired.
+        assert_eq!(client.heaped_metrics.pop_front(), Some(vec![]));
+        assert_eq!(
+            client.heaped_metrics.pop_back(),
+            Some(HostMetricWrapper("host_id_1", will_be_inserted).into())
+        );
     }
 }
