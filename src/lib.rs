@@ -7,6 +7,8 @@ use std::{
 };
 use tokio::time;
 
+// 6 hours
+const MAX_HEAP_SIZE: usize = 60 * 6;
 const INTERVAL: Duration = Duration::from_secs(60);
 
 // &'a str expects host id.
@@ -51,7 +53,7 @@ impl Agent {
             client: Box::new(client::Client::new(&config.apikey)),
             config,
             host_id,
-            heaped_metrics: VecDeque::new(),
+            heaped_metrics: VecDeque::with_capacity(MAX_HEAP_SIZE),
         }
     }
 
@@ -110,10 +112,10 @@ impl Agent {
 
         // If Ok, then heaped metric must be empty, else extend it.
         self.heaped_metrics = if result.is_ok() {
-            VecDeque::new()
+            VecDeque::with_capacity(MAX_HEAP_SIZE)
         } else {
             // Drop the most previous metrics if it's more than 6 hours ago.
-            if 60 * 6 <= self.heaped_metrics.len() {
+            if MAX_HEAP_SIZE <= self.heaped_metrics.len() {
                 self.heaped_metrics.pop_front();
             }
             self.heaped_metrics.push_back(metric);
@@ -197,7 +199,7 @@ mod tests {
         let mut client_heaped_metrics = VecDeque::new();
         client_heaped_metrics
             .push_back(HostMetricWrapper("host_id_1", will_be_expired.clone()).into());
-        for _ in 0..(60 * 6 - 1) {
+        for _ in 0..(MAX_HEAP_SIZE - 1) {
             client_heaped_metrics.push_back(vec![]);
         }
 
